@@ -35,11 +35,13 @@ spec:
             default: '1.0.0'
           shortDescription:
             type: string
+          provider:
+            type: string
+            default: 'unspecified'
+          url:
+            type: string
           relations:
             type: object
-            provider:
-              type: string
-              default: 'unspecified'
             requires:
               type: string
             suggests:
@@ -61,3 +63,6 @@ spec:
     - JSONPath: .metadata.creationTimestamp
       name: Age
       type: date
+    - JSONPath: .spec.url
+      name: Documentation
+      type: string

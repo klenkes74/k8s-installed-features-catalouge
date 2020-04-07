@@ -9,3 +9,4 @@ spec:
   provider: Kaiserpfalz EDV-Service
   shortDescription: |+
     The catalogue definition to hold all feature information of a cluster.
+  url: https://github.com/klenkes74/k8s-installed-features-catalogue/
