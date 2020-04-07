@@ -9,6 +9,11 @@ A small definition for creating a catalogue of installed features on a
 Kuberenetes cluster. Kubernetes is very flexible. Flexible to the extend that
 you never know which features are enabled or installed.
 
+In addition your cluster automation may check for the installed version of
+features and act on that data (e.g. by updating a feature). Or you can check if
+all required features for you are installed ...
+
+
 ## License
 The license for the software is LGPL 3.0 or newer. 
 
