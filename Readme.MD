@@ -29,7 +29,14 @@ $
 ```
 
 Now you can select the info as cluster-admin. If you want to allow normal users to select it, you have to create a RBAC 
-role for it ...
+role for it:
+
+```bash
+$ oc create -f rbac-list-features.yaml 
+clusterrole.authorization.openshift.io/listfeatures created
+clusterrolebinding.authorization.openshift.io/feature:listfeatures created
+$
+```
 
 ## A note from the author
 If someone is interested in getting it faster, we may team up. I'm open for that. But be warned: I want to do it 
