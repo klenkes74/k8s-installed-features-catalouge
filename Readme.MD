@@ -43,6 +43,15 @@ clusterrolebinding.authorization.openshift.io/feature:listfeatures created
 $
 ```
 
+And now you can get the features listed in a small nice manner:
+
+```bash
+$ oc get ift
+NAME                 GROUP          VERSION        AGE       DOCUMENTATION
+features-catalogue   cluster-info   1.0.0-alpha1   1d        https://github.com/klenkes74/k8s-installed-features-catalogue/
+$
+```
+
 ## A note from the author
 If someone is interested in getting it faster, we may team up. I'm open for that. But be warned: I want to do it 
 _right_. So no short cuts to get faster. And be prepared for some basic discussions about the architecture or software 
