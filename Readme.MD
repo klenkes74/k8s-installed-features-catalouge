@@ -58,4 +58,4 @@ _right_. So no short cuts to get faster. And be prepared for some basic discussi
 design :-).
 
 ---
-Bensheim, 2020-04-06-08:20+02:00
+Bensheim, 2020-04-06
