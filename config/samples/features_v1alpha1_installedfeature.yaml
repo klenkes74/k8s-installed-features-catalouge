@@ -1,7 +1,11 @@
-apiVersion: features.kaiserpfalz-edv.de/v1alpha1
 kind: InstalledFeature
+apiVersion: features.kaiserpfalz-edv.de/v1alpha1
 metadata:
-  name: installedfeature-sample
+  name: k8s-feature-library
 spec:
-  # Add fields here
-  foo: bar
+  group: cluster-info
+  version: 1.0.0-alpha1
+  provider: Kaiserpfalz EDV-Service
+  description: |+
+    The catalogue definition to hold all feature information of a cluster.
+  url: https://github.com/klenkes74/k8s-installed-features-catalogue/

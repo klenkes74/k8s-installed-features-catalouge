@@ -37,6 +37,12 @@ type InstalledFeatureReconciler struct {
 // +kubebuilder:rbac:groups=features.kaiserpfalz-edv.de,resources=installedfeatures,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=features.kaiserpfalz-edv.de,resources=installedfeatures/status,verbs=get;update;patch
 
+func (r *InstalledFeatureReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&featuresv1alpha1.InstalledFeature{}).
+		Complete(r)
+}
+
 func (r *InstalledFeatureReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
 	_ = r.Log.WithValues("installedfeature", req.NamespacedName)
@@ -44,10 +50,4 @@ func (r *InstalledFeatureReconciler) Reconcile(req ctrl.Request) (ctrl.Result, e
 	// your logic here
 
 	return ctrl.Result{}, nil
-}
-
-func (r *InstalledFeatureReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&featuresv1alpha1.InstalledFeature{}).
-		Complete(r)
 }

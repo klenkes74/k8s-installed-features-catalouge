@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package v1alpha1
 
 import (
@@ -22,9 +21,6 @@ import (
 )
 
 // InstalledFeatureSpec defines the desired state of InstalledFeature
-// +kubebuilder:printcolumn:JSONPath=.Kind,description=Feature Name,name=Feature,type=string
-// +kubebuilder:printcolumn:JSONPath=.Version,description=Feature Name,name=Feature,type=string
-// +kubebuilder:printcolumn:JSONPath=.Uri,description=Documentation URI for this feature,name=Documentation,type=string
 type InstalledFeatureSpec struct {
 	// Group is the preferred group of the resource.  Empty implies the group of the containing resource list.
 	// For subresources, this may have a different value, for example: Scale".
@@ -34,17 +30,21 @@ type InstalledFeatureSpec struct {
 	// Version is the preferred version of the resource.  Empty implies the version of the containing resource list
 	// For subresources, this may have a different value, for example: v1 (while inside a v1beta1 version of the core resource's group)".
 	Version string `json:"version" protobuf:"bytes,9,opt,name=version"`
+	// Provider is the organisation providing this feature.
+	Provider string `json:"provider,omitempty"`
 	// Description of this feature
 	Description string `json:"description,omitempty"`
 	// URI with further information for users of this feature
 	Uri string `json:"uri,omitempty"`
+	// +kubebuilder:validation:UniqueItems=true
 	// DependsOn lists all features this feature depends on to function.
-	DependsOn []InstalledFeatureDependency `json:"depends-on,omitempty"`
+	DependsOn []InstalledFeatureDependency `json:"depends,omitempty"`
+	// +kubebuilder:validation:UniqueItems=true
 	// Conflicts lists all features that make a cluster incompatible with this feature
-	Conflicts []InstalledFeatureDependency `json:"conflicts-with,omitempty"`
+	Conflicts []InstalledFeatureDependency `json:"conflicts,omitempty"`
 }
 
-// InstalledFeatureDependency is for listing dependend or conflicting features. They are speciefied by group, Kind and
+// InstalledFeatureDependency is for listing dependent or conflicting features. They are specified by group, Kind and
 // version. With the version being MinVersion and MaxVersion.
 type InstalledFeatureDependency struct {
 	// Group is the preferred group of the resource.  Empty implies the group of the containing resource list.
@@ -54,16 +54,18 @@ type InstalledFeatureDependency struct {
 	Kind string `json:"kind" protobuf:"bytes,3,opt,name=kind"`
 	// MinVersion is the preferred version of the resource.  Empty implies the version of the containing resource list
 	// For subresources, this may have a different value, for example: v1 (while inside a v1beta1 version of the core resource's group)".
+	// The MinVersion is included.
 	MinVersion string `json:"min-version,omitempty" protobuf:"bytes,9,opt,name=version"`
 	// MinVersion is the preferred version of the resource.  Empty implies the version of the containing resource list
 	// For subresources, this may have a different value, for example: v1 (while inside a v1beta1 version of the core resource's group)".
+	// The MaxVersion is the first incompatible version (min and max versions are a right open interval)
 	MaxVersion string `json:"max-version,omitempty" protobuf:"bytes,9,opt,name=version"`
 }
 
 // InstalledFeatureStatus defines the observed state of InstalledFeature
 type InstalledFeatureStatus struct {
 	// +kubebuilder:validation:Enum={"pending","initializing","failed","conflicting","dependency-missing"}
-	// Phase is the state of this message. May be pending, initializing, failed, provisioned or deprovisioned
+	// Phase is the state of this message. May be pending, initializing, failed, provisioned or unprovisioned
 	Phase string `json:"phase"`
 	// Message is a human readable message for this state.
 	Message string `json:"message,omitempty"`
@@ -72,8 +74,12 @@ type InstalledFeatureStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:singular="InstalledFeature",shortName="ift"
 // +kubebuilder:subresource:status
-
+// +kubebuilder:printcolumn:name="Group",type=string,JSONPath=`.spec.group`
+// +kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.spec.version`
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:printcolumn:name="Documentation",type=string,JSONPath=`.spec.url`
 // InstalledFeature is the Schema for the installedfeatures API
 type InstalledFeature struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -89,7 +95,8 @@ type InstalledFeature struct {
 type InstalledFeatureList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []InstalledFeature `json:"items"`
+	// +kubebuilder:validation:UniqueItems=true
+	Items []InstalledFeature `json:"items"`
 }
 
 func init() {
