@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers
+package controllers_test
 
 import (
 	"path/filepath"
@@ -50,7 +50,7 @@ func TestAPIs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func(done Done) {
-	logf.SetLogger(zap.LoggerTo(GinkgoWriter, true))
+	logf.SetLogger(zap.New(zap.UseDevMode(true), zap.WriteTo(GinkgoWriter)))
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
@@ -78,4 +78,58 @@ var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	err := testEnv.Stop()
 	Expect(err).ToNot(HaveOccurred())
+})
+
+var _ = Describe("Creating a new InstalledFeature", func() {
+	It("should be created when there are no conflicting features installed and all dependencies met", func() {
+		// TODO 2020-09-26 klenkes74 Implement this test
+	})
+
+	It("should be created with failing state when there are conflicting features installed", func() {
+		// TODO 2020-09-26 klenkes74 Implement this test
+	})
+
+	It("should be created with failing state when there are dependencies missing completely", func() {
+		// TODO 2020-09-26 klenkes74 Implement this test
+	})
+
+	It("should be created with failing state when the dependency version is too low", func() {
+		// TODO 2020-09-26 klenkes74 Implement this test
+	})
+
+	It("should be created with failing state when the dependency version is too high", func() {
+		// TODO 2020-09-26 klenkes74 Implement this test
+	})
+
+	It("should not be created when the same feature is already installed", func() {
+		// TODO 2020-09-26 klenkes74 Implement this test
+	})
+})
+
+var _ = Describe("Delete an existing InstalledFeature", func() {
+	It("should be deleted when there are no dependencies on the removed feature", func() {
+		// TODO 2020-09-26 klenkes74 Implement this test
+	})
+
+	It("should not be deleted when there are dependencies on the removed feature", func() {
+		// TODO 2020-09-26 klenkes74 Implement this test
+	})
+})
+
+var _ = Describe("Technical handling", func() {
+	It("should ignore failures to load a resource when the reason is 'NotFound'", func() {
+		// TODO 2020-09-26 klenkes74 Implement this test
+	})
+
+	It("should requeue the request when the resource can not be loaded for any reason but 'NotFound'", func() {
+		// TODO 2020-09-26 klenkes74 Implement this test
+	})
+
+	It("should requeue the request when a changed resource fails to update", func() {
+		// TODO 2020-09-26 klenkes74 Implement this test
+	})
+
+	It("should add the finalizer when the finalizer is not set", func() {
+		// TODO 2020-09-26 klenkes74 Implement this test
+	})
 })
