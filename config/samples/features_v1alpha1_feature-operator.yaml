@@ -1,3 +1,4 @@
+---
 kind: InstalledFeature
 apiVersion: features.kaiserpfalz-edv.de/v1alpha1
 metadata:
