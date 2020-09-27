@@ -1,4 +1,5 @@
 .idea/
 docs/generated/
-target/
+generated/
 *.iml
+/cover.out
