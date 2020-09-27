@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"github.com/klenkes74/k8s-installed-features-catalogue/controllers/installedfeature"
 	"os"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -67,12 +68,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.InstalledFeatureReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("InstalledFeature"),
+	if err = (&installedfeature.Reconciler{
+		Client: &controllers.OcpClientProd{Client: mgr.GetClient()},
+		Log:    ctrl.Log.WithName("controllers").WithName("InstalledFeatures"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "InstalledFeature")
+		setupLog.Error(err, "unable to create controller", "controller", "InstalledFeatures")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
