@@ -10,7 +10,7 @@ spec:
   provider: Kaiserpfalz EDV-Service
   description: |+
     The k8s-feature-operator checks if all dependencies and conflicts are solved for a given k8s-feature-library CR.
-  url: https://www.kaiserpfalz-edv.de/k8s/k8s-installed-features-catalogue/
+  uri: https://www.kaiserpfalz-edv.de/k8s/k8s-installed-features-catalogue/
   depends:
     - kind: k8s-feature-library
       group: cluster-info

@@ -36,10 +36,8 @@ type InstalledFeatureSpec struct {
 	Description string `json:"description,omitempty"`
 	// URI with further information for users of this feature
 	Uri string `json:"uri,omitempty"`
-	// +kubebuilder:validation:UniqueItems=true
 	// DependsOn lists all features this feature depends on to function.
 	DependsOn []InstalledFeatureDependency `json:"depends,omitempty"`
-	// +kubebuilder:validation:UniqueItems=true
 	// Conflicts lists all features that make a cluster incompatible with this feature
 	Conflicts []InstalledFeatureDependency `json:"conflicts,omitempty"`
 }
@@ -74,12 +72,12 @@ type InstalledFeatureStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:singular="InstalledFeature",shortName="ift"
+// +kubebuilder:resource:shortName="ift"
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Group",type=string,JSONPath=`.spec.group`
 // +kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.spec.version`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
-// +kubebuilder:printcolumn:name="Documentation",type=string,JSONPath=`.spec.url`
+// +kubebuilder:printcolumn:name="Documentation",type=string,JSONPath=`.spec.uri`
 // InstalledFeature is the Schema for the installedfeatures API
 type InstalledFeature struct {
 	metav1.TypeMeta   `json:",inline"`
