@@ -66,11 +66,6 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{Requeue: true, RequeueAfter: 10}, err
 	}
 
-	changed = r.handleFinalizer(instance, changed)
-	return r.handleUpdate(changed, reqLogger, ctx, instance)
-}
-
-func (r *Reconciler) handleFinalizer(instance *featuresv1alpha1.InstalledFeature, changed bool) bool {
 	if !controllerutil.ContainsFinalizer(instance, FinalizerName) && instance.DeletionTimestamp == nil {
 		controllerutil.AddFinalizer(instance, FinalizerName)
 
@@ -80,37 +75,17 @@ func (r *Reconciler) handleFinalizer(instance *featuresv1alpha1.InstalledFeature
 
 		changed = true
 	}
-	return changed
-}
 
-func (r *Reconciler) handleUpdate(changed bool, reqLogger logr.Logger, ctx context.Context, instance *featuresv1alpha1.InstalledFeature) (ctrl.Result, error) {
 	if changed {
 		reqLogger.Info("rewriting the installedfeature")
 
 		err := r.Client.SaveInstalledFeature(ctx, instance)
 		if err != nil {
-			reqLogger.Error(err, "could not rewrite the installedfeature")
+			r.Log.Error(err, "could not rewrite the installedfeature")
 
 			return ctrl.Result{Requeue: true, RequeueAfter: 10}, err
 		}
 	}
 
-	if instance.Status.Phase == "" {
-		err := r.modifyStatus(ctx, instance, "provisioned", "ok")
-		if err != nil {
-			reqLogger.Error(err, "could not set the status to the installedfeature")
-
-			return ctrl.Result{RequeueAfter: 10, Requeue: true}, err
-		}
-	}
-
 	return ctrl.Result{}, nil
-}
-
-func (r *Reconciler) modifyStatus(ctx context.Context, instance *featuresv1alpha1.InstalledFeature, phase string, message string) error {
-	patch := r.Client.GetInstalledFeaturePatchBase(instance)
-	instance.Status.Phase = phase
-	instance.Status.Message = message
-	return r.Client.PatchInstalledFeatureStatus(ctx, instance, patch)
-
 }
