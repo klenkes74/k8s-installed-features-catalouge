@@ -30,15 +30,42 @@ type OcpClient interface {
 	client.Client
 	LoadInstalledFeature(ctx context.Context, lookup types.NamespacedName) (*v1alpha1.InstalledFeature, error)
 	SaveInstalledFeature(ctx context.Context, instance *v1alpha1.InstalledFeature) error
+	GetInstalledFeaturePatchBase(instance *v1alpha1.InstalledFeature) client.Patch
+	PatchInstalledFeatureStatus(ctx context.Context, statusWriter client.StatusWriter, instance *v1alpha1.InstalledFeature, patch client.Patch) error
 
 	LoadInstalledFeatureGroup(ctx context.Context, lookup types.NamespacedName) (*v1alpha1.InstalledFeatureGroup, error)
 	SaveInstalledFeatureGroup(ctx context.Context, instance *v1alpha1.InstalledFeatureGroup) error
+	GetInstalledFeatureGroupPatchBase(instance *v1alpha1.InstalledFeature) client.Patch
+	PatchInstalledFeatureGroupStatus(ctx context.Context, statusWriter client.StatusWriter, instance *v1alpha1.InstalledFeatureGroup, patch client.Patch) error
 }
 
 var _ OcpClient = &OcpClientProd{}
 
 type OcpClientProd struct {
 	Client client.Client
+}
+
+func (o OcpClientProd) LoadInstalledFeature(ctx context.Context, lookup types.NamespacedName) (*v1alpha1.InstalledFeature, error) {
+	instance := &v1alpha1.InstalledFeature{}
+
+	err := o.Get(ctx, lookup, instance)
+	if err != nil {
+		return nil, err
+	}
+
+	return instance, nil
+}
+
+func (o OcpClientProd) SaveInstalledFeature(ctx context.Context, instance *v1alpha1.InstalledFeature) error {
+	return o.Client.Update(ctx, instance)
+}
+
+func (o OcpClientProd) GetInstalledFeaturePatchBase(instance *v1alpha1.InstalledFeature) client.Patch {
+	return client.MergeFrom(instance.DeepCopy())
+}
+
+func (o OcpClientProd) PatchInstalledFeatureStatus(ctx context.Context, statusWriter client.StatusWriter, instance *v1alpha1.InstalledFeature, patch client.Patch) error {
+	return statusWriter.Patch(ctx, instance, patch)
 }
 
 func (o OcpClientProd) LoadInstalledFeatureGroup(ctx context.Context, lookup types.NamespacedName) (*v1alpha1.InstalledFeatureGroup, error) {
@@ -56,19 +83,12 @@ func (o OcpClientProd) SaveInstalledFeatureGroup(ctx context.Context, instance *
 	return o.Client.Update(ctx, instance)
 }
 
-func (o OcpClientProd) LoadInstalledFeature(ctx context.Context, lookup types.NamespacedName) (*v1alpha1.InstalledFeature, error) {
-	instance := &v1alpha1.InstalledFeature{}
-
-	err := o.Get(ctx, lookup, instance)
-	if err != nil {
-		return nil, err
-	}
-
-	return instance, nil
+func (o OcpClientProd) GetInstalledFeatureGroupPatchBase(instance *v1alpha1.InstalledFeature) client.Patch {
+	return client.MergeFrom(instance.DeepCopy())
 }
 
-func (o OcpClientProd) SaveInstalledFeature(ctx context.Context, instance *v1alpha1.InstalledFeature) error {
-	return o.Client.Update(ctx, instance)
+func (o OcpClientProd) PatchInstalledFeatureGroupStatus(ctx context.Context, statusWriter client.StatusWriter, instance *v1alpha1.InstalledFeatureGroup, patch client.Patch) error {
+	return statusWriter.Patch(ctx, instance, patch)
 }
 
 func (o OcpClientProd) Get(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
