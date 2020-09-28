@@ -1,0 +1,24 @@
+# permissions for end users to edit installedfeaturegroups.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: installedfeaturegroup-editor-role
+rules:
+  - apiGroups:
+      - features.kaiserpfalz-edv.de
+    resources:
+      - installedfeaturegroups
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - features.kaiserpfalz-edv.de
+    resources:
+      - installedfeaturegroups/status
+    verbs:
+      - get

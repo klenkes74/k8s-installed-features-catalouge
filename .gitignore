@@ -1,5 +1,6 @@
 .idea/
-docs/generated/
-generated/
 *.iml
+testbin/
+bin/
+generated/
 /cover.out

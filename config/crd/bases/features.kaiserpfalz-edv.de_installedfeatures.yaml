@@ -23,8 +23,8 @@ spec:
       type: string
   group: features.kaiserpfalz-edv.de
   names:
-    kind: InstalledFeatures
-    listKind: InstalledFeaturesList
+    kind: InstalledFeature
+    listKind: InstalledFeatureList
     plural: installedfeatures
     shortNames:
       - ift
@@ -34,7 +34,7 @@ spec:
     status: { }
   validation:
     openAPIV3Schema:
-      description: InstalledFeatures is the Schema for the installedfeatures API
+      description: InstalledFeature is the Schema for the installedfeatures API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -49,14 +49,14 @@ spec:
         metadata:
           type: object
         spec:
-          description: InstalledFeaturesSpec defines the desired state of InstalledFeatures
+          description: InstalledFeatureSpec defines the desired state of InstalledFeature
           properties:
             conflicts:
               description: Conflicts lists all features that make a cluster incompatible
                 with this feature
               items:
-                description: InstalledFeaturesDependency is for listing dependent
-                  or conflicting features. They are specified by group, Kind and version.
+                description: InstalledFeatureDependency is for listing dependent or
+                  conflicting features. They are specified by group, Kind and version.
                   With the version being MinVersion and MaxVersion.
                 properties:
                   group:
@@ -91,8 +91,8 @@ spec:
               description: DependsOn lists all features this feature depends on to
                 function.
               items:
-                description: InstalledFeaturesDependency is for listing dependent
-                  or conflicting features. They are specified by group, Kind and version.
+                description: InstalledFeatureDependency is for listing dependent or
+                  conflicting features. They are specified by group, Kind and version.
                   With the version being MinVersion and MaxVersion.
                 properties:
                   group:
@@ -152,7 +152,7 @@ spec:
             - version
           type: object
         status:
-          description: InstalledFeaturesStatus defines the observed state of InstalledFeatures
+          description: InstalledFeatureStatus defines the observed state of InstalledFeature
           properties:
             message:
               description: Message is a human readable message for this state.

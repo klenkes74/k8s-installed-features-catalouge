@@ -2,4 +2,5 @@
 resources:
   - features_v1alpha1_installedfeature.yaml
 - features_v1alpha1_feature-operator.yaml
+- features_v1alpha1_installedfeaturegroup.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

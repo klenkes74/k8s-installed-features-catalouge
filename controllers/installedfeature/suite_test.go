@@ -47,7 +47,7 @@ func TestInstalledFeatureController(t *testing.T) {
 	RegisterFailHandler(Fail)
 
 	RunSpecsWithDefaultAndCustomReporters(t,
-		"InstalledFeatures Controller Suite",
+		"InstalledFeature Controller Suite",
 		[]Reporter{printer.NewlineReporter{}})
 }
 

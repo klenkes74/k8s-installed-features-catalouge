@@ -32,7 +32,7 @@ const (
 	FinalizerName = "features.kaiserpfalz-edv.de/installedfeature-controller"
 )
 
-// Reconciler reconciles a InstalledFeatures object
+// Reconciler reconciles a InstalledFeature object
 type Reconciler struct {
 	Client controllers.OcpClient
 
@@ -42,18 +42,19 @@ type Reconciler struct {
 
 // +kubebuilder:rbac:groups=features.kaiserpfalz-edv.de,resources=installedfeatures,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=features.kaiserpfalz-edv.de,resources=installedfeatures/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=features.kaiserpfalz-edv.de,resources=installedfeaturegroups/status,verbs=get;update;patch
 
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&featuresv1alpha1.InstalledFeatures{}).
+		For(&featuresv1alpha1.InstalledFeature{}).
 		Complete(r)
 }
 
 func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	_ = r.Log.WithValues("installedfeature", req.NamespacedName)
+	reqLogger := r.Log.WithValues("installedfeature", req.NamespacedName)
+	reqLogger.Info("working on", "ctx", ctx)
 
-	r.Log.Info("working on installedfeature")
 	changed := false
 
 	instance, err := r.Client.LoadInstalledFeature(ctx, req.NamespacedName)
@@ -65,14 +66,18 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{Requeue: true, RequeueAfter: 10}, err
 	}
 
-	if !controllerutil.ContainsFinalizer(instance, FinalizerName) {
+	if !controllerutil.ContainsFinalizer(instance, FinalizerName) && instance.DeletionTimestamp == nil {
 		controllerutil.AddFinalizer(instance, FinalizerName)
+
+		changed = true
+	} else if controllerutil.ContainsFinalizer(instance, FinalizerName) && instance.DeletionTimestamp != nil {
+		controllerutil.RemoveFinalizer(instance, FinalizerName)
 
 		changed = true
 	}
 
 	if changed {
-		r.Log.Info("rewriting the installedfeature")
+		reqLogger.Info("rewriting the installedfeature")
 
 		err := r.Client.SaveInstalledFeature(ctx, instance)
 		if err != nil {

@@ -33,7 +33,7 @@ import (
 	// +kubebuilder:scaffold:imports
 )
 
-var _ = Describe("InstalledFeatures controller", func() {
+var _ = Describe("InstalledFeature controller", func() {
 	const (
 		name        = "basic-feature"
 		namespace   = "default"
@@ -53,9 +53,9 @@ var _ = Describe("InstalledFeatures controller", func() {
 		}
 	)
 
-	Context("When installing a InstalledFeatures CR", func() {
+	Context("When installing a InstalledFeature CR", func() {
 		It("should be created when there are no conflicting features installed and all dependencies met", func() {
-			By("By creating a new InstalledFeatures")
+			By("By creating a new InstalledFeature")
 
 			ift := createIFT(name, namespace, version, provider, description, uri, true, false)
 			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
@@ -67,7 +67,7 @@ var _ = Describe("InstalledFeatures controller", func() {
 		})
 
 		It("should add the finalizer when the finalizer is not set", func() {
-			By("By creating a new InstalledFeatures without finalizer")
+			By("By creating a new InstalledFeature without finalizer")
 
 			ift := createIFT(name, namespace, version, provider, description, uri, false, false)
 			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
@@ -84,7 +84,7 @@ var _ = Describe("InstalledFeatures controller", func() {
 		})
 	})
 
-	Context("Delete an existing InstalledFeatures", func() {
+	Context("Delete an existing InstalledFeature", func() {
 		It("should be deleted when there are no dependencies on the removed feature", func() {
 			// TODO 2020-09-26 klenkes74 Implement this test
 		})
@@ -136,10 +136,10 @@ var _ = Describe("InstalledFeatures controller", func() {
 	})
 })
 
-func createIFT(name string, namespace string, version string, provider string, description string, uri string, finalizer bool, deleted bool) *InstalledFeatures {
-	result := &InstalledFeatures{
+func createIFT(name string, namespace string, version string, provider string, description string, uri string, finalizer bool, deleted bool) *InstalledFeature {
+	result := &InstalledFeature{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "InstalledFeatures",
+			Kind:       "InstalledFeature",
 			APIVersion: GroupVersion.Group + "/" + GroupVersion.Version,
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -150,7 +150,7 @@ func createIFT(name string, namespace string, version string, provider string, d
 			Generation:        0,
 			UID:               types.UID(uuid.New()),
 		},
-		Spec: InstalledFeaturesSpec{
+		Spec: InstalledFeatureSpec{
 			Kind:        name,
 			Version:     version,
 			Provider:    provider,
@@ -173,8 +173,8 @@ func createIFT(name string, namespace string, version string, provider string, d
 	return result
 }
 
-func copyIFT(orig *InstalledFeatures) *InstalledFeatures {
-	result := &InstalledFeatures{
+func copyIFT(orig *InstalledFeature) *InstalledFeature {
+	result := &InstalledFeature{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       orig.TypeMeta.Kind,
 			APIVersion: orig.TypeMeta.APIVersion,
@@ -192,7 +192,7 @@ func copyIFT(orig *InstalledFeatures) *InstalledFeatures {
 			DeletionGracePeriodSeconds: orig.ObjectMeta.DeletionGracePeriodSeconds,
 			ClusterName:                orig.ObjectMeta.ClusterName,
 		},
-		Spec: InstalledFeaturesSpec{
+		Spec: InstalledFeatureSpec{
 			Kind:        orig.Spec.Kind,
 			Version:     orig.Spec.Version,
 			Provider:    orig.Spec.Provider,
