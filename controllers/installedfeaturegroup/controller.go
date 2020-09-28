@@ -44,12 +44,6 @@ type Reconciler struct {
 // +kubebuilder:rbac:groups=features.kaiserpfalz-edv.de,resources=installedfeaturegroups/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=features.kaiserpfalz-edv.de,resources=installedfeatures/status,verbs=get;update;patch
 
-func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&featuresv1alpha1.InstalledFeatureGroup{}).
-		Complete(r)
-}
-
 func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	reqLogger := r.Log.WithValues("installedfeaturegroup", req.NamespacedName)
@@ -66,11 +60,6 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{Requeue: true, RequeueAfter: 10}, err
 	}
 
-	changed = r.handleFinalizer(instance, changed)
-	return r.handleUpdate(changed, reqLogger, ctx, instance)
-}
-
-func (r *Reconciler) handleFinalizer(instance *featuresv1alpha1.InstalledFeatureGroup, changed bool) bool {
 	if !controllerutil.ContainsFinalizer(instance, FinalizerName) && instance.DeletionTimestamp == nil {
 		controllerutil.AddFinalizer(instance, FinalizerName)
 
@@ -80,10 +69,7 @@ func (r *Reconciler) handleFinalizer(instance *featuresv1alpha1.InstalledFeature
 
 		changed = true
 	}
-	return changed
-}
 
-func (r *Reconciler) handleUpdate(changed bool, reqLogger logr.Logger, ctx context.Context, instance *featuresv1alpha1.InstalledFeatureGroup) (ctrl.Result, error) {
 	if changed {
 		reqLogger.Info("rewriting the installedfeaturegroup")
 
@@ -96,4 +82,10 @@ func (r *Reconciler) handleUpdate(changed bool, reqLogger logr.Logger, ctx conte
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&featuresv1alpha1.InstalledFeatureGroup{}).
+		Complete(r)
 }

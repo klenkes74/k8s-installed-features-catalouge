@@ -58,10 +58,6 @@ var _ = Describe("InstalledFeature API", func() {
 				Description: description,
 				Uri:         uri,
 			},
-			Status: InstalledFeatureStatus{
-				Phase:   "provisioned",
-				Message: "provisioned without problems",
-			},
 		}
 		ctx          = context.Background()
 		iftLookupKey = types.NamespacedName{Name: name, Namespace: namespace}
