@@ -62,13 +62,15 @@ type InstalledFeatureDependency struct {
 
 // InstalledFeatureStatus defines the observed state of InstalledFeature
 type InstalledFeatureStatus struct {
-	// +kubebuilder:validation:Enum={"pending","initializing","failed","conflicting","dependency-missing"}
-	// Phase is the state of this message. May be pending, initializing, failed, provisioned or unprovisioned
+	// +kubebuilder:validation:Enum={"pending","initializing","failed","provisioned"}
+	// Phase is the state of this message. May be pending, initializing, failed, provisioned
 	Phase string `json:"phase"`
 	// Message is a human readable message for this state.
 	Message string `json:"message,omitempty"`
-	// Feature contains the conflicting feature or the missing-dependency (depending on the value of Phase).
-	Feature InstalledFeatureDependency `json:"related-feature,omitempty"`
+	// MissingDependencies contains  or the missing-dependency.
+	MissingDependencies []InstalledFeatureDependency `json:"missing-dependencies,omitempty"`
+	// ConflictingFeatures contains the conflicting feature.
+	ConflictingFeatures []InstalledFeatureDependency `json:"conflicting-features,omitempty"`
 }
 
 // +kubebuilder:object:root=true

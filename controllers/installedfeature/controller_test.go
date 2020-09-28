@@ -28,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"time"
 	// +kubebuilder:scaffold:imports
@@ -60,6 +61,11 @@ var _ = Describe("InstalledFeature controller", func() {
 			ift := createIFT(name, namespace, version, provider, description, uri, true, false)
 			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
 
+			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
+			client.EXPECT().
+				PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), ift, k8sclient.MergeFrom(ift)).
+				Return(nil)
+
 			result, err := sut.Reconcile(iftReconcileRequest)
 
 			Expect(result).Should(Equal(reconcile.Result{Requeue: false}))
@@ -77,6 +83,11 @@ var _ = Describe("InstalledFeature controller", func() {
 			expected.Finalizers[0] = FinalizerName
 
 			client.EXPECT().SaveInstalledFeature(gomock.Any(), expected).Return(nil)
+
+			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
+			client.EXPECT().
+				PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), ift, k8sclient.MergeFrom(ift)).
+				Return(nil)
 
 			result, err := sut.Reconcile(iftReconcileRequest)
 			Expect(result).Should(Equal(reconcile.Result{Requeue: false}))

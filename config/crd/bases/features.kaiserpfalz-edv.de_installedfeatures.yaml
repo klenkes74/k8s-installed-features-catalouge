@@ -154,50 +154,88 @@ spec:
         status:
           description: InstalledFeatureStatus defines the observed state of InstalledFeature
           properties:
+            conflicting-features:
+              description: ConflictingFeatures contains the conflicting feature.
+              items:
+                description: InstalledFeatureDependency is for listing dependent or
+                  conflicting features. They are specified by group, Kind and version.
+                  With the version being MinVersion and MaxVersion.
+                properties:
+                  group:
+                    description: 'Group is the preferred group of the resource.  Empty
+                      implies the group of the containing resource list. For subresources,
+                      this may have a different value, for example: Scale".'
+                    type: string
+                  kind:
+                    description: Kind is the kind for the resource (e.g. 'Foo' is
+                      the kind for a resource 'foo')
+                    type: string
+                  max-version:
+                    description: 'MinVersion is the preferred version of the resource.  Empty
+                      implies the version of the containing resource list For subresources,
+                      this may have a different value, for example: v1 (while inside
+                      a v1beta1 version of the core resource''s group)". The MaxVersion
+                      is the first incompatible version (min and max versions are
+                      a right open interval)'
+                    type: string
+                  min-version:
+                    description: 'MinVersion is the preferred version of the resource.  Empty
+                      implies the version of the containing resource list For subresources,
+                      this may have a different value, for example: v1 (while inside
+                      a v1beta1 version of the core resource''s group)". The MinVersion
+                      is included.'
+                    type: string
+                required:
+                  - kind
+                type: object
+              type: array
             message:
               description: Message is a human readable message for this state.
               type: string
+            missing-dependencies:
+              description: MissingDependencies contains  or the missing-dependency.
+              items:
+                description: InstalledFeatureDependency is for listing dependent or
+                  conflicting features. They are specified by group, Kind and version.
+                  With the version being MinVersion and MaxVersion.
+                properties:
+                  group:
+                    description: 'Group is the preferred group of the resource.  Empty
+                      implies the group of the containing resource list. For subresources,
+                      this may have a different value, for example: Scale".'
+                    type: string
+                  kind:
+                    description: Kind is the kind for the resource (e.g. 'Foo' is
+                      the kind for a resource 'foo')
+                    type: string
+                  max-version:
+                    description: 'MinVersion is the preferred version of the resource.  Empty
+                      implies the version of the containing resource list For subresources,
+                      this may have a different value, for example: v1 (while inside
+                      a v1beta1 version of the core resource''s group)". The MaxVersion
+                      is the first incompatible version (min and max versions are
+                      a right open interval)'
+                    type: string
+                  min-version:
+                    description: 'MinVersion is the preferred version of the resource.  Empty
+                      implies the version of the containing resource list For subresources,
+                      this may have a different value, for example: v1 (while inside
+                      a v1beta1 version of the core resource''s group)". The MinVersion
+                      is included.'
+                    type: string
+                required:
+                  - kind
+                type: object
+              type: array
             phase:
               description: Phase is the state of this message. May be pending, initializing,
-                failed, provisioned or unprovisioned
+                failed, provisioned
               enum:
                 - pending
                 - initializing
                 - failed
-                - conflicting
-                - dependency-missing
+                - provisioned
               type: string
-            related-feature:
-              description: Feature contains the conflicting feature or the missing-dependency
-                (depending on the value of Phase).
-              properties:
-                group:
-                  description: 'Group is the preferred group of the resource.  Empty
-                    implies the group of the containing resource list. For subresources,
-                    this may have a different value, for example: Scale".'
-                  type: string
-                kind:
-                  description: Kind is the kind for the resource (e.g. 'Foo' is the
-                    kind for a resource 'foo')
-                  type: string
-                max-version:
-                  description: 'MinVersion is the preferred version of the resource.  Empty
-                    implies the version of the containing resource list For subresources,
-                    this may have a different value, for example: v1 (while inside
-                    a v1beta1 version of the core resource''s group)". The MaxVersion
-                    is the first incompatible version (min and max versions are a
-                    right open interval)'
-                  type: string
-                min-version:
-                  description: 'MinVersion is the preferred version of the resource.  Empty
-                    implies the version of the containing resource list For subresources,
-                    this may have a different value, for example: v1 (while inside
-                    a v1beta1 version of the core resource''s group)". The MinVersion
-                    is included.'
-                  type: string
-              required:
-                - kind
-              type: object
           required:
             - phase
           type: object
