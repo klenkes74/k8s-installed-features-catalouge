@@ -36,10 +36,8 @@ type InstalledFeatureSpec struct {
 	Description string `json:"description,omitempty"`
 	// URI with further information for users of this feature
 	Uri string `json:"uri,omitempty"`
-	// +kubebuilder:validation:UniqueItems=true
 	// DependsOn lists all features this feature depends on to function.
 	DependsOn []InstalledFeatureDependency `json:"depends,omitempty"`
-	// +kubebuilder:validation:UniqueItems=true
 	// Conflicts lists all features that make a cluster incompatible with this feature
 	Conflicts []InstalledFeatureDependency `json:"conflicts,omitempty"`
 }
@@ -64,22 +62,24 @@ type InstalledFeatureDependency struct {
 
 // InstalledFeatureStatus defines the observed state of InstalledFeature
 type InstalledFeatureStatus struct {
-	// +kubebuilder:validation:Enum={"pending","initializing","failed","conflicting","dependency-missing"}
-	// Phase is the state of this message. May be pending, initializing, failed, provisioned or unprovisioned
+	// +kubebuilder:validation:Enum={"pending","initializing","failed","provisioned"}
+	// Phase is the state of this message. May be pending, initializing, failed, provisioned
 	Phase string `json:"phase"`
 	// Message is a human readable message for this state.
 	Message string `json:"message,omitempty"`
-	// Feature contains the conflicting feature or the missing-dependency (depending on the value of Phase).
-	Feature InstalledFeatureDependency `json:"related-feature,omitempty"`
+	// MissingDependencies contains  or the missing-dependency.
+	MissingDependencies []InstalledFeatureDependency `json:"missing-dependencies,omitempty"`
+	// ConflictingFeatures contains the conflicting feature.
+	ConflictingFeatures []InstalledFeatureDependency `json:"conflicting-features,omitempty"`
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:singular="InstalledFeature",shortName="ift"
+// +kubebuilder:resource:shortName="ift"
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Group",type=string,JSONPath=`.spec.group`
 // +kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.spec.version`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
-// +kubebuilder:printcolumn:name="Documentation",type=string,JSONPath=`.spec.url`
+// +kubebuilder:printcolumn:name="Documentation",type=string,JSONPath=`.spec.uri`
 // InstalledFeature is the Schema for the installedfeatures API
 type InstalledFeature struct {
 	metav1.TypeMeta   `json:",inline"`

@@ -18,6 +18,9 @@ package main
 
 import (
 	"flag"
+	"github.com/klenkes74/k8s-installed-features-catalogue/controllers"
+	"github.com/klenkes74/k8s-installed-features-catalogue/controllers/installedfeature"
+	"github.com/klenkes74/k8s-installed-features-catalogue/controllers/installedfeaturegroup"
 	"os"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,7 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	featuresv1alpha1 "github.com/klenkes74/k8s-installed-features-catalogue/api/v1alpha1"
-	"github.com/klenkes74/k8s-installed-features-catalogue/controllers"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -67,8 +69,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.InstalledFeatureReconciler{
-		Client: mgr.GetClient(),
+	if err = (&installedfeaturegroup.Reconciler{
+		Client: &controllers.OcpClientProd{Client: mgr.GetClient()},
+		Log:    ctrl.Log.WithName("controllers").WithName("InstalledFeatureGroup"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "InstalledFeatureGroup")
+		os.Exit(1)
+	}
+	if err = (&installedfeature.Reconciler{
+		Client: &controllers.OcpClientProd{Client: mgr.GetClient()},
 		Log:    ctrl.Log.WithName("controllers").WithName("InstalledFeature"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {

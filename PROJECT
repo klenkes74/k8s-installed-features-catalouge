@@ -4,6 +4,9 @@ projectName: k8s-installed-features-catalogue
 repo: github.com/klenkes74/k8s-installed-features-catalogue
 resources:
 - group: features
+  kind: InstalledFeatureGroup
+  version: v1alpha1
+- group: features
   kind: InstalledFeature
   version: v1alpha1
 version: 3-alpha

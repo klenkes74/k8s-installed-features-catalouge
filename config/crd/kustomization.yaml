@@ -2,18 +2,21 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-- bases/features.kaiserpfalz-edv.de_installedfeatures.yaml
+  - bases/features.kaiserpfalz-edv.de_installedfeatures.yaml
+- bases/features.kaiserpfalz-edv.de_installedfeaturegroups.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD
 #- patches/webhook_in_installedfeatures.yaml
+#- patches/webhook_in_installedfeaturegroups.yaml
 # +kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CERTMANAGER] To enable webhook, uncomment all the sections with [CERTMANAGER] prefix.
 # patches here are for enabling the CA injection for each CRD
 #- patches/cainjection_in_installedfeatures.yaml
+#- patches/cainjection_in_installedfeaturegroups.yaml
 # +kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # the following config is for teaching kustomize how to do kustomization for CRDs.

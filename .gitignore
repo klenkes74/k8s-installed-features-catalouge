@@ -1,4 +1,7 @@
 .idea/
-docs/generated/
-target/
 *.iml
+testbin/
+bin/
+generated/
+/cover.out
+/api/v1alpha1/zz_generated.deepcopy.go
