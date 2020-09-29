@@ -66,13 +66,6 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{Requeue: true, RequeueAfter: 10}, err
 	}
 
-	phase := "provisioned"
-	message := "ok"
-	err = r.modifyStatus(ctx, instance, phase, message)
-	if err != nil {
-		return ctrl.Result{Requeue: true, RequeueAfter: 10}, err
-	}
-
 	changed = r.handleFinalizer(instance, changed)
 	return r.handleUpdate(changed, reqLogger, ctx, instance)
 }
@@ -115,8 +108,9 @@ func (r *Reconciler) handleUpdate(changed bool, reqLogger logr.Logger, ctx conte
 }
 
 func (r *Reconciler) modifyStatus(ctx context.Context, instance *featuresv1alpha1.InstalledFeature, phase string, message string) error {
-	status := r.Client.GetInstalledFeaturePatchBase(instance)
+	patch := r.Client.GetInstalledFeaturePatchBase(instance)
 	instance.Status.Phase = phase
 	instance.Status.Message = message
-	return r.Client.Patch(ctx, instance, status)
+	return r.Client.PatchInstalledFeatureStatus(ctx, instance, patch)
+
 }
