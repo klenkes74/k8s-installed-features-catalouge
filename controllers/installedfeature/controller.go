@@ -108,8 +108,9 @@ func (r *Reconciler) handleUpdate(changed bool, reqLogger logr.Logger, ctx conte
 }
 
 func (r *Reconciler) modifyStatus(ctx context.Context, instance *featuresv1alpha1.InstalledFeature, phase string, message string) error {
-	status := r.Client.GetInstalledFeaturePatchBase(instance)
+	patch := r.Client.GetInstalledFeaturePatchBase(instance)
 	instance.Status.Phase = phase
 	instance.Status.Message = message
-	return r.Client.Patch(ctx, instance, status)
+	return r.Client.PatchInstalledFeatureStatus(ctx, instance, patch)
+
 }
