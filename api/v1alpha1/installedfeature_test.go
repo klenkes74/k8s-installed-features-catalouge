@@ -54,7 +54,7 @@ var _ = Describe("InstalledFeature API", func() {
 				Namespace: namespace,
 			},
 			Spec: InstalledFeatureSpec{
-				Group: &InstalledFeatureGroupRef{
+				Group: &InstalledFeatureRef{
 					Namespace: groupnamespace,
 					Name:      groupname,
 				},

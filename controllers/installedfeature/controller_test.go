@@ -408,7 +408,7 @@ func copyIFT(orig *InstalledFeature) *InstalledFeature {
 }
 
 func setGroupToIFT(instance *InstalledFeature, name string, namespace string) *InstalledFeature {
-	instance.Spec.Group = &InstalledFeatureGroupRef{
+	instance.Spec.Group = &InstalledFeatureRef{
 		Namespace: namespace,
 		Name:      name,
 	}
