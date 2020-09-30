@@ -7,7 +7,7 @@ spec:
   kind: k8s-feature-library-operator
   group: cluster-info
   version: 1.0.0-alpha1
-  provider: Kaiserpfalz EDV-Service
+  provider: Kaiserpfalz EDV-Service, Roland T. Lichti
   description: |+
     The k8s-feature-operator checks if all dependencies and conflicts are solved for a given k8s-feature-library CR.
   uri: https://www.kaiserpfalz-edv.de/k8s/k8s-installed-features-catalogue/

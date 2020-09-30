@@ -33,7 +33,7 @@ type OcpClient interface {
 
 	LoadInstalledFeatureGroup(ctx context.Context, lookup types.NamespacedName) (*v1alpha1.InstalledFeatureGroup, error)
 	SaveInstalledFeatureGroup(ctx context.Context, instance *v1alpha1.InstalledFeatureGroup) error
-	GetInstalledFeatureGroupPatchBase(instance *v1alpha1.InstalledFeature) client.Patch
+	GetInstalledFeatureGroupPatchBase(instance *v1alpha1.InstalledFeatureGroup) client.Patch
 	PatchInstalledFeatureGroupStatus(ctx context.Context, instance *v1alpha1.InstalledFeatureGroup, patch client.Patch) error
 }
 
@@ -81,7 +81,7 @@ func (o OcpClientProd) SaveInstalledFeatureGroup(ctx context.Context, instance *
 	return o.Client.Update(ctx, instance)
 }
 
-func (o OcpClientProd) GetInstalledFeatureGroupPatchBase(instance *v1alpha1.InstalledFeature) client.Patch {
+func (o OcpClientProd) GetInstalledFeatureGroupPatchBase(instance *v1alpha1.InstalledFeatureGroup) client.Patch {
 	return client.MergeFrom(instance.DeepCopy())
 }
 

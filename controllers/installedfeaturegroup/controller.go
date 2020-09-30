@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	FinalizerName = "features.kaiserpfalz-edv.de/installedfeaturegroup-controller"
+	FinalizerName = "features.kaiserpfalz-edv.de/installedfeature-controller"
 )
 
 // Reconciler reconciles a InstalledFeatureGroup object
@@ -95,5 +95,21 @@ func (r *Reconciler) handleUpdate(changed bool, reqLogger logr.Logger, ctx conte
 		}
 	}
 
+	if instance.Status.Phase == "" {
+		err := r.modifyStatus(ctx, instance, "provisioned", "ok")
+		if err != nil {
+			reqLogger.Error(err, "could not set the status to the installedfeature")
+
+			return ctrl.Result{RequeueAfter: 10, Requeue: true}, err
+		}
+	}
+
 	return ctrl.Result{}, nil
+}
+
+func (r *Reconciler) modifyStatus(ctx context.Context, instance *featuresv1alpha1.InstalledFeatureGroup, phase string, message string) error {
+	status := r.Client.GetInstalledFeatureGroupPatchBase(instance)
+	instance.Status.Phase = phase
+	instance.Status.Message = message
+	return r.Client.PatchInstalledFeatureGroupStatus(ctx, instance, status)
 }

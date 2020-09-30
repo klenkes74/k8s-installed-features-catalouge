@@ -1,7 +1,15 @@
 apiVersion: features.kaiserpfalz-edv.de/v1alpha1
 kind: InstalledFeatureGroup
 metadata:
-  name: installedfeaturegroup-sample
+  name: cluster-info
 spec:
-  # Add fields here
-  foo: bar
+  provider: Kaiserpfalz EDV-Service, Roland T. Lichti
+  description: |+
+    All demonstration samples for the feature-library are part of this group.
+  uri: https://www.kaiserpfalz-edv.de/k8s/
+status:
+  phase: pending
+  message: just installing
+  features:
+    - name: k8s-feature-library
+    - name: k8s-feature-library-operator
