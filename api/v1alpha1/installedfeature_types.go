@@ -20,11 +20,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// InstaledFeatureGroupListedFeature defines subfeatures by namespace and name
+type InstalledFeatureGroupRef struct {
+	// Namespace is the namespace of the feature listed
+	Namespace string `json:"namespace,omitempty"`
+	// Name is the name of the feature listed
+	Name string `json:"name"`
+}
+
 // InstalledFeatureSpec defines the desired state of InstalledFeature
 type InstalledFeatureSpec struct {
 	// Group is the preferred group of the resource.  Empty implies the group of the containing resource list.
 	// For subresources, this may have a different value, for example: Scale".
-	Group string `json:"group,omitempty" protobuf:"bytes,8,opt,name=group"`
+	Group *InstalledFeatureGroupRef `json:"group,omitempty"`
 	// Kind is the kind for the resource (e.g. 'Foo' is the kind for a resource 'foo')
 	Kind string `json:"kind" protobuf:"bytes,3,opt,name=kind"`
 	// Version is the preferred version of the resource.  Empty implies the version of the containing resource list
@@ -47,7 +55,7 @@ type InstalledFeatureSpec struct {
 type InstalledFeatureDependency struct {
 	// Group is the preferred group of the resource.  Empty implies the group of the containing resource list.
 	// For subresources, this may have a different value, for example: Scale".
-	Group string `json:"group,omitempty" protobuf:"bytes,8,opt,name=group"`
+	Group InstalledFeatureGroupRef `json:"group,omitempty"`
 	// Kind is the kind for the resource (e.g. 'Foo' is the kind for a resource 'foo')
 	Kind string `json:"kind" protobuf:"bytes,3,opt,name=kind"`
 	// MinVersion is the preferred version of the resource.  Empty implies the version of the containing resource list

@@ -29,42 +29,33 @@ import (
 	// +kubebuilder:scaffold:imports
 )
 
-var _ = Describe("InstalledFeature API", func() {
+var _ = Describe("InstalledFeatureGroup API", func() {
 	const (
-		groupname      = "basic-libary"
-		groupnamespace = "default"
-		name           = "basic-feature"
-		namespace      = "default"
-		version        = "1.0.0-alpha1"
-		provider       = "Kaiserpfalz EDV-Service"
-		description    = "a basic demonstration feature"
-		uri            = "https://www.kaiserpfalz-edv.de/k8s/"
+		name        = "basic-group"
+		namespace   = "default"
+		provider    = "Kaiserpfalz EDV-Service"
+		description = "a basic demonstration feature"
+		uri         = "https://www.kaiserpfalz-edv.de/k8s/"
 
 		timeout  = time.Second * 10
 		interval = time.Millisecond * 250
 	)
 	var (
-		ift = &InstalledFeature{
+		iftg = &InstalledFeatureGroup{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "InstalledFeature",
+				Kind:       "InstalledFeatureGroup",
 				APIVersion: GroupVersion.Group + "/" + GroupVersion.Version,
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Namespace: namespace,
 			},
-			Spec: InstalledFeatureSpec{
-				Group: &InstalledFeatureGroupRef{
-					Namespace: groupnamespace,
-					Name:      groupname,
-				},
-				Kind:        name,
-				Version:     version,
+			Spec: InstalledFeatureGroupSpec{
 				Provider:    provider,
 				Description: description,
 				Uri:         uri,
 			},
-			Status: InstalledFeatureStatus{
+			Status: InstalledFeatureGroupStatus{
 				Phase:   "provisioned",
 				Message: "provisioned without problems",
 			},
@@ -77,9 +68,9 @@ var _ = Describe("InstalledFeature API", func() {
 		It("should be created when there are no conflicting features installed and all dependencies met", func() {
 			By("By creating a new InstalledFeature")
 
-			Expect(k8sClient.Create(ctx, ift)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, iftg)).Should(Succeed())
 
-			createdIft := &InstalledFeature{}
+			createdIft := &InstalledFeatureGroup{}
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, iftLookupKey, createdIft)
 				if err != nil {
@@ -89,25 +80,24 @@ var _ = Describe("InstalledFeature API", func() {
 				return true
 			}, timeout, interval).Should(BeTrue())
 
-			Expect(createdIft.Spec.Kind).Should(Equal(name))
-			Expect(createdIft.Spec.Version).Should(Equal(version))
+			Expect(createdIft.ObjectMeta.Name).Should(Equal(name))
 		})
 	})
 
 	Context("When deleting an existing InstalledFeature", func() {
 		It("should be deleted", func() {
-			By("By deleting the InstalledFeature named: " + ift.Name)
+			By("By deleting the InstalledFeature named: " + iftg.Name)
 
-			Expect(k8sClient.Delete(ctx, ift)).Should(Succeed())
+			Expect(k8sClient.Delete(ctx, iftg)).Should(Succeed())
 
-			createdIft := &InstalledFeature{}
+			createdIft := &InstalledFeatureGroup{}
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, iftLookupKey, createdIft)
 				if errors.IsNotFound(err) {
 					return true
 				}
 
-				logf.Log.Info("found ift", "ift", createdIft)
+				logf.Log.Info("found iftg", "iftg", createdIft)
 
 				return false
 			}, timeout, interval).Should(BeTrue())

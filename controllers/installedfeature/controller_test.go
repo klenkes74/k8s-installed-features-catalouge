@@ -36,22 +36,21 @@ import (
 
 var _ = Describe("InstalledFeature controller", func() {
 	const (
+		group       = "basic-library"
 		name        = "basic-feature"
 		namespace   = "default"
 		version     = "1.0.0-alpha1"
 		provider    = "Kaiserpfalz EDV-Service"
 		description = "a basic demonstration feature"
 		uri         = "https://www.kaiserpfalz-edv.de/k8s/"
-
-		timeout  = time.Second * 10
-		duration = time.Second * 10
-		interval = time.Millisecond * 250
 	)
 	var (
 		iftLookupKey        = types.NamespacedName{Name: name, Namespace: namespace}
 		iftReconcileRequest = reconcile.Request{
 			NamespacedName: iftLookupKey,
 		}
+
+		iftgLookupKey = types.NamespacedName{Name: group, Namespace: namespace}
 	)
 
 	Context("When installing a InstalledFeature CR", func() {
@@ -92,12 +91,136 @@ var _ = Describe("InstalledFeature controller", func() {
 	})
 
 	Context("Delete an existing InstalledFeature", func() {
-		It("should be deleted when there are no dependencies on the removed feature", func() {
-			// TODO 2020-09-26 klenkes74 Implement this test
+		It("should remove the finalizer when the finalizer is set", func() {
+			By("By creating a new InstalledFeature without finalizer")
+
+			ift := createIFT(name, namespace, version, provider, description, uri, true, true)
+			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+			expected := copyIFT(ift)
+			expected.Finalizers = make([]string, 0)
+
+			client.EXPECT().SaveInstalledFeature(gomock.Any(), expected).Return(nil)
+
+			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
+			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			result, err := sut.Reconcile(iftReconcileRequest)
+			Expect(result).Should(Equal(reconcile.Result{Requeue: false}))
+			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+
+	Context("Handle Library Groups", func() {
+		It("should add the status entry on the IFTG when the IFTG has no features yet", func() {
+			ift := createIFT(name, namespace, version, provider, description, uri, true, false)
+			setGroupToIFT(ift, group, namespace)
+			iftg := createIFTG(group, namespace, provider, description, uri, true, false)
+
+			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+			client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftgLookupKey).Return(iftg, nil)
+			client.EXPECT().GetInstalledFeatureGroupPatchBase(gomock.Any()).Return(k8sclient.MergeFrom(iftg))
+			client.EXPECT().PatchInstalledFeatureGroupStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
+			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			result, err := sut.Reconcile(iftReconcileRequest)
+
+			Expect(result).Should(Equal(reconcile.Result{Requeue: false}))
+			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("should not be deleted when there are dependencies on the removed feature", func() {
-			// TODO 2020-09-26 klenkes74 Implement this test
+		It("should add the status entry on the IFTG when the IFTG has already features", func() {
+			ift := createIFT(name, namespace, version, provider, description, uri, true, false)
+			setGroupToIFT(ift, group, namespace)
+			iftg := createIFTG(group, namespace, provider, description, uri, true, false)
+			iftg.Status.Features = make([]InstalledFeatureGroupListedFeature, 1)
+			iftg.Status.Features[0] = InstalledFeatureGroupListedFeature{
+				Namespace: namespace,
+				Name:      "other-feature",
+			}
+
+			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+			client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftgLookupKey).Return(iftg, nil)
+			client.EXPECT().GetInstalledFeatureGroupPatchBase(gomock.Any()).Return(k8sclient.MergeFrom(iftg))
+			client.EXPECT().PatchInstalledFeatureGroupStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
+			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			result, err := sut.Reconcile(iftReconcileRequest)
+
+			Expect(result).Should(Equal(reconcile.Result{Requeue: false}))
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should not add the feature to the status entry on the IFTG when the IFTG already lists this feature", func() {
+			ift := createIFT(name, namespace, version, provider, description, uri, true, false)
+			setGroupToIFT(ift, group, namespace)
+			iftg := createIFTG(group, namespace, provider, description, uri, true, false)
+			iftg.Status.Features = make([]InstalledFeatureGroupListedFeature, 1)
+			iftg.Status.Features[0] = InstalledFeatureGroupListedFeature{
+				Namespace: namespace,
+				Name:      name,
+			}
+
+			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+			client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftgLookupKey).Return(iftg, nil)
+			client.EXPECT().GetInstalledFeatureGroupPatchBase(gomock.Any()).Return(k8sclient.MergeFrom(iftg))
+
+			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
+			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			result, err := sut.Reconcile(iftReconcileRequest)
+
+			Expect(result).Should(Equal(reconcile.Result{Requeue: false}))
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should remove the status entry on the IFTG when IFT is deleted and is listed in IFTG", func() {
+			ift := createIFT(name, namespace, version, provider, description, uri, false, true)
+			setGroupToIFT(ift, group, namespace)
+			iftg := createIFTG(group, namespace, provider, description, uri, true, false)
+			iftg.Status.Features = make([]InstalledFeatureGroupListedFeature, 1)
+			iftg.Status.Features[0] = InstalledFeatureGroupListedFeature{
+				Namespace: namespace,
+				Name:      name,
+			}
+
+			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+			client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftgLookupKey).Return(iftg, nil)
+			client.EXPECT().GetInstalledFeatureGroupPatchBase(gomock.Any()).Return(k8sclient.MergeFrom(iftg))
+			client.EXPECT().PatchInstalledFeatureGroupStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
+			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			result, err := sut.Reconcile(iftReconcileRequest)
+
+			Expect(result).Should(Equal(reconcile.Result{Requeue: false}))
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should ignore the problem when IFTG can't be loaded", func() {
+			ift := createIFT(name, namespace, version, provider, description, uri, false, true)
+			setGroupToIFT(ift, group, namespace)
+
+			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+			client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftgLookupKey).Return(nil, errors.New("can not load IFTG"))
+
+			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
+			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			result, err := sut.Reconcile(iftReconcileRequest)
+
+			Expect(result).Should(Equal(reconcile.Result{Requeue: false}))
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
@@ -123,7 +246,7 @@ var _ = Describe("InstalledFeature controller", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
-		It("should requeue request when writing the reconciled object failes", func() {
+		It("should requeue request when writing the reconciled object fails", func() {
 			By("By getting a failure while saving the data back into the k8s cluster")
 
 			ift := createIFT(name, namespace, version, provider, description, uri, false, false)
@@ -139,6 +262,23 @@ var _ = Describe("InstalledFeature controller", func() {
 			Expect(result).Should(Equal(reconcile.Result{Requeue: true, RequeueAfter: 10}))
 			Expect(err).To(HaveOccurred())
 
+		})
+
+		It("should requeue the request when updating the status fails", func() {
+			By("By getting an error when updating the status")
+
+			ift := createIFT(name, namespace, version, provider, description, uri, true, false)
+			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
+			client.EXPECT().
+				PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(errors.New("patching failed"))
+
+			result, err := sut.Reconcile(iftReconcileRequest)
+
+			Expect(result).Should(Equal(reconcile.Result{Requeue: true, RequeueAfter: 10}))
+			Expect(err).To(HaveOccurred())
 		})
 	})
 })
@@ -181,6 +321,7 @@ func createIFT(name string, namespace string, version string, provider string, d
 }
 
 func copyIFT(orig *InstalledFeature) *InstalledFeature {
+	//goland:noinspection GoDeprecation
 	result := &InstalledFeature{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       orig.TypeMeta.Kind,
@@ -206,6 +347,10 @@ func copyIFT(orig *InstalledFeature) *InstalledFeature {
 			Description: orig.Spec.Description,
 			Uri:         orig.Spec.Uri,
 		},
+	}
+
+	if orig.Spec.Group != nil {
+		result = setGroupToIFT(result, orig.Spec.Group.Name, orig.Spec.Group.Namespace)
 	}
 
 	if len(orig.ObjectMeta.Labels) > 0 {
@@ -257,6 +402,50 @@ func copyIFT(orig *InstalledFeature) *InstalledFeature {
 				},
 			}
 		}
+	}
+
+	return result
+}
+
+func setGroupToIFT(instance *InstalledFeature, name string, namespace string) *InstalledFeature {
+	instance.Spec.Group = &InstalledFeatureGroupRef{
+		Namespace: namespace,
+		Name:      name,
+	}
+
+	return instance
+}
+
+func createIFTG(name string, namespace string, provider string, description string, uri string, finalizer bool, deleted bool) *InstalledFeatureGroup {
+	result := &InstalledFeatureGroup{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "InstalledFeature",
+			APIVersion: GroupVersion.Group + "/" + GroupVersion.Version,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              name,
+			Namespace:         namespace,
+			CreationTimestamp: metav1.Time{Time: time.Now().Add(24 * time.Hour)},
+			ResourceVersion:   "1",
+			Generation:        0,
+			UID:               types.UID(uuid.New()),
+		},
+		Spec: InstalledFeatureGroupSpec{
+			Provider:    provider,
+			Description: description,
+			Uri:         uri,
+		},
+	}
+
+	if finalizer {
+		result.Finalizers = make([]string, 1)
+		result.Finalizers[0] = FinalizerName
+	}
+
+	if deleted {
+		deletionGracePeriod := int64(60)
+		result.DeletionGracePeriodSeconds = &deletionGracePeriod
+		result.DeletionTimestamp = &metav1.Time{Time: time.Now().Add(2 * time.Minute)}
 	}
 
 	return result

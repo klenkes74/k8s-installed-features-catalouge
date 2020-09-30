@@ -20,26 +20,44 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+// Important: Run "make" to regenerate code after modifying this file
 
 // InstalledFeatureGroupSpec defines the desired state of InstalledFeatureGroup
 type InstalledFeatureGroupSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Provider is the organisation providing this feature
+	Provider string `json:"provider,omitempty"`
+	// Description of this feature
+	Description string `json:"description,omitempty"`
+	// URI with further information for users of this feature
+	Uri string `json:"uri,omitempty"`
+}
 
-	// Foo is an example field of InstalledFeatureGroup. Edit InstalledFeatureGroup_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+// InstaledFeatureGroupListedFeature defines subfeatures by namespace and name
+type InstalledFeatureGroupListedFeature struct {
+	// Namespace is the namespace of the feature listed
+	Namespace string `json:"namespace,omitempty"`
+	// Name is the name of the feature listed
+	Name string `json:"name"`
 }
 
 // InstalledFeatureGroupStatus defines the observed state of InstalledFeatureGroup
 type InstalledFeatureGroupStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// +kubebuilder:validation:Enum={"pending","initializing","failed","provisioned"}
+	// Phase is the state of this message. May be pending, initializing, failed, provisioned
+	Phase string `json:"phase"`
+	// Message is a human readable message for this state
+	Message string `json:"message,omitempty"`
+	// Features contain all features of this feature group
+	Features []InstalledFeatureGroupListedFeature `json:"features,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName="iftg"
+// +kubebuilder:printcolumn:name="Group",type=string,JSONPath=`.metadata.name`
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:printcolumn:name="Documentation",type=string,JSONPath=`.spec.uri`
 
 // InstalledFeatureGroup is the Schema for the installedfeaturegroups API
 type InstalledFeatureGroup struct {
