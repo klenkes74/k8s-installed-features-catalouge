@@ -88,12 +88,23 @@ var _ = Describe("InstalledFeature controller", func() {
 	})
 
 	Context("Delete an existing InstalledFeature", func() {
-		It("should be deleted when there are no dependencies on the removed feature", func() {
-			// TODO 2020-09-26 klenkes74 Implement this test
-		})
+		It("should remove the finalizer when the finalizer is set", func() {
+			By("By creating a new InstalledFeature without finalizer")
 
-		It("should not be deleted when there are dependencies on the removed feature", func() {
-			// TODO 2020-09-26 klenkes74 Implement this test
+			ift := createIFT(name, namespace, version, provider, description, uri, true, true)
+			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+			expected := copyIFT(ift)
+			expected.Finalizers = make([]string, 0)
+
+			client.EXPECT().SaveInstalledFeature(gomock.Any(), expected).Return(nil)
+
+			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
+			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			result, err := sut.Reconcile(iftReconcileRequest)
+			Expect(result).Should(Equal(reconcile.Result{Requeue: false}))
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
