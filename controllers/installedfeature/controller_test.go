@@ -42,10 +42,6 @@ var _ = Describe("InstalledFeature controller", func() {
 		provider    = "Kaiserpfalz EDV-Service"
 		description = "a basic demonstration feature"
 		uri         = "https://www.kaiserpfalz-edv.de/k8s/"
-
-		timeout  = time.Second * 10
-		duration = time.Second * 10
-		interval = time.Millisecond * 250
 	)
 	var (
 		iftLookupKey        = types.NamespacedName{Name: name, Namespace: namespace}
@@ -123,7 +119,7 @@ var _ = Describe("InstalledFeature controller", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
-		It("should requeue request when writing the reconciled object failes", func() {
+		It("should requeue request when writing the reconciled object fails", func() {
 			By("By getting a failure while saving the data back into the k8s cluster")
 
 			ift := createIFT(name, namespace, version, provider, description, uri, false, false)
@@ -139,6 +135,23 @@ var _ = Describe("InstalledFeature controller", func() {
 			Expect(result).Should(Equal(reconcile.Result{Requeue: true, RequeueAfter: 10}))
 			Expect(err).To(HaveOccurred())
 
+		})
+
+		It("should requeue the request when updating the status fails", func() {
+			By("By getting an error when updating the status")
+
+			ift := createIFT(name, namespace, version, provider, description, uri, true, false)
+			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
+			client.EXPECT().
+				PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).
+				Return(errors.New("patching failed"))
+
+			result, err := sut.Reconcile(iftReconcileRequest)
+
+			Expect(result).Should(Equal(reconcile.Result{Requeue: true, RequeueAfter: 10}))
+			Expect(err).To(HaveOccurred())
 		})
 	})
 })
@@ -181,6 +194,7 @@ func createIFT(name string, namespace string, version string, provider string, d
 }
 
 func copyIFT(orig *InstalledFeature) *InstalledFeature {
+	//goland:noinspection GoDeprecation
 	result := &InstalledFeature{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       orig.TypeMeta.Kind,
