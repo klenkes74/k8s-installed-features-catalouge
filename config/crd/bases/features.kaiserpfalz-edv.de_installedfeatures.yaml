@@ -63,7 +63,16 @@ spec:
                     description: 'Group is the preferred group of the resource.  Empty
                       implies the group of the containing resource list. For subresources,
                       this may have a different value, for example: Scale".'
-                    type: string
+                    properties:
+                      name:
+                        description: Name is the name of the feature listed
+                        type: string
+                      namespace:
+                        description: Namespace is the namespace of the feature listed
+                        type: string
+                    required:
+                      - name
+                    type: object
                   kind:
                     description: Kind is the kind for the resource (e.g. 'Foo' is
                       the kind for a resource 'foo')
@@ -99,7 +108,16 @@ spec:
                     description: 'Group is the preferred group of the resource.  Empty
                       implies the group of the containing resource list. For subresources,
                       this may have a different value, for example: Scale".'
-                    type: string
+                    properties:
+                      name:
+                        description: Name is the name of the feature listed
+                        type: string
+                      namespace:
+                        description: Namespace is the namespace of the feature listed
+                        type: string
+                    required:
+                      - name
+                    type: object
                   kind:
                     description: Kind is the kind for the resource (e.g. 'Foo' is
                       the kind for a resource 'foo')
@@ -130,7 +148,16 @@ spec:
               description: 'Group is the preferred group of the resource.  Empty implies
                 the group of the containing resource list. For subresources, this
                 may have a different value, for example: Scale".'
-              type: string
+              properties:
+                name:
+                  description: Name is the name of the feature listed
+                  type: string
+                namespace:
+                  description: Namespace is the namespace of the feature listed
+                  type: string
+              required:
+                - name
+              type: object
             kind:
               description: Kind is the kind for the resource (e.g. 'Foo' is the kind
                 for a resource 'foo')
@@ -165,7 +192,16 @@ spec:
                     description: 'Group is the preferred group of the resource.  Empty
                       implies the group of the containing resource list. For subresources,
                       this may have a different value, for example: Scale".'
-                    type: string
+                    properties:
+                      name:
+                        description: Name is the name of the feature listed
+                        type: string
+                      namespace:
+                        description: Namespace is the namespace of the feature listed
+                        type: string
+                    required:
+                      - name
+                    type: object
                   kind:
                     description: Kind is the kind for the resource (e.g. 'Foo' is
                       the kind for a resource 'foo')
@@ -203,7 +239,16 @@ spec:
                     description: 'Group is the preferred group of the resource.  Empty
                       implies the group of the containing resource list. For subresources,
                       this may have a different value, for example: Scale".'
-                    type: string
+                    properties:
+                      name:
+                        description: Name is the name of the feature listed
+                        type: string
+                      namespace:
+                        description: Namespace is the namespace of the feature listed
+                        type: string
+                    required:
+                      - name
+                    type: object
                   kind:
                     description: Kind is the kind for the resource (e.g. 'Foo' is
                       the kind for a resource 'foo')

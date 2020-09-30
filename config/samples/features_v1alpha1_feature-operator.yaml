@@ -5,7 +5,8 @@ metadata:
   name: k8s-feature-library-operator
 spec:
   kind: k8s-feature-library-operator
-  group: cluster-info
+  group:
+    name: cluster-info
   version: 1.0.0-alpha1
   provider: Kaiserpfalz EDV-Service, Roland T. Lichti
   description: |+

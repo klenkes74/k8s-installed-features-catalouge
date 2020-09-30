@@ -31,12 +31,14 @@ import (
 
 var _ = Describe("InstalledFeature API", func() {
 	const (
-		name        = "basic-feature"
-		namespace   = "default"
-		version     = "1.0.0-alpha1"
-		provider    = "Kaiserpfalz EDV-Service"
-		description = "a basic demonstration feature"
-		uri         = "https://www.kaiserpfalz-edv.de/k8s/"
+		groupname      = "basic-libary"
+		groupnamespace = "default"
+		name           = "basic-feature"
+		namespace      = "default"
+		version        = "1.0.0-alpha1"
+		provider       = "Kaiserpfalz EDV-Service"
+		description    = "a basic demonstration feature"
+		uri            = "https://www.kaiserpfalz-edv.de/k8s/"
 
 		timeout  = time.Second * 10
 		interval = time.Millisecond * 250
@@ -52,6 +54,10 @@ var _ = Describe("InstalledFeature API", func() {
 				Namespace: namespace,
 			},
 			Spec: InstalledFeatureSpec{
+				Group: &InstalledFeatureGroupRef{
+					Namespace: groupnamespace,
+					Name:      groupname,
+				},
 				Kind:        name,
 				Version:     version,
 				Provider:    provider,
