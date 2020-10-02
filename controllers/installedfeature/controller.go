@@ -73,6 +73,11 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{RequeueAfter: 60}, err
 	}
 
+	changed, err = r.handleDependent(ctx, instance, reqLogger, changed)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: 60}, err
+	}
+
 	changed, err = r.handleGroupEntry(ctx, instance, reqLogger, changed)
 	if err != nil {
 		return ctrl.Result{RequeueAfter: 60}, err
@@ -166,13 +171,100 @@ func (r *Reconciler) handleDependingOn(ctx context.Context, instance *featuresv1
 }
 
 func (r *Reconciler) markDependencyAsMissing(instance *featuresv1alpha1.InstalledFeature, dependency featuresv1alpha1.InstalledFeatureDependency, reqLogger logr.Logger) {
-	reqLogger.Info("can not load feature we depend on", "feature", dependency.Feature)
+	reqLogger.Info("mark the missing feature", "feature", dependency.Feature)
 
 	if instance.Status.MissingDependencies == nil {
 		instance.Status.MissingDependencies = make([]featuresv1alpha1.InstalledFeatureDependency, 0)
 	}
 
 	instance.Status.MissingDependencies = append(instance.Status.MissingDependencies, dependency)
+}
+
+func (r *Reconciler) removeMissingDependencyStatus(instance *featuresv1alpha1.InstalledFeature, dependency featuresv1alpha1.InstalledFeatureDependency, reqLogger logr.Logger) bool {
+	i := r.indexOfMissingDependency(instance, dependency)
+	if i == -1 {
+		return false
+	}
+
+	reqLogger.Info("remove the marked missing feature", "feature", dependency.Feature)
+
+	instance.Status.MissingDependencies[i] = instance.Status.MissingDependencies[len(instance.Status.MissingDependencies)-1]
+	instance.Status.MissingDependencies = instance.Status.MissingDependencies[:len(instance.Status.MissingDependencies)-1]
+
+	return true
+}
+
+func (r *Reconciler) indexOfMissingDependency(instance *featuresv1alpha1.InstalledFeature, dependency featuresv1alpha1.InstalledFeatureDependency) int {
+	if instance.Status.MissingDependencies == nil {
+		return -1
+	}
+
+	for i, d := range instance.Status.MissingDependencies {
+		if d.Feature.Name == dependency.Feature.Name && d.Feature.Namespace == dependency.Feature.Namespace {
+			return i
+		}
+	}
+
+	return -1
+}
+
+func (r *Reconciler) handleDependent(ctx context.Context, instance *featuresv1alpha1.InstalledFeature, reqLogger logr.Logger, changed bool) (bool, error) {
+	if instance.Status.DependingFeatures == nil || len(instance.Status.DependingFeatures) == 0 {
+		return changed, nil
+	}
+
+	reqLogger.Info("handling dependent features")
+
+	missingDependent := make([]featuresv1alpha1.InstalledFeatureRef, 0)
+	for _, feature := range instance.Status.DependingFeatures {
+		ift, err := r.Client.LoadInstalledFeature(ctx, types.NamespacedName{Namespace: feature.Namespace, Name: feature.Name})
+		if err != nil {
+			if errors.IsNotFound(err) {
+				reqLogger.Info("dependent feature is not found - don't need to change it.", "feature", feature)
+				continue
+			}
+
+			reqLogger.Info("dependent feature can not be loaded.", "feature", feature)
+			missingDependent = append(missingDependent, feature)
+		}
+
+		iftStatus := r.Client.GetInstalledFeaturePatchBase(ift)
+		if instance.DeletionTimestamp == nil {
+			for _, dep := range ift.Status.MissingDependencies {
+				if dep.Feature.Namespace == instance.Namespace && dep.Feature.Name == instance.Name {
+					r.removeMissingDependencyStatus(ift, featuresv1alpha1.InstalledFeatureDependency{
+						Feature: featuresv1alpha1.InstalledFeatureRef{
+							Namespace: instance.Namespace,
+							Name:      instance.Name,
+						},
+					}, reqLogger)
+				}
+			}
+		} else {
+			r.markDependencyAsMissing(
+				ift,
+				featuresv1alpha1.InstalledFeatureDependency{
+					Feature: featuresv1alpha1.InstalledFeatureRef{
+						Namespace: instance.Namespace,
+						Name:      instance.Name,
+					},
+				},
+				reqLogger,
+			)
+
+			missingDependent = append(missingDependent, feature)
+		}
+
+		if len(missingDependent) > 0 {
+			err := r.Client.PatchInstalledFeatureStatus(ctx, ift, iftStatus)
+			if err != nil {
+				return changed, err
+			}
+		}
+
+	}
+
+	return changed, nil
 }
 
 func (r *Reconciler) handleGroupEntry(ctx context.Context, instance *featuresv1alpha1.InstalledFeature, reqLogger logr.Logger, changed bool) (bool, error) {

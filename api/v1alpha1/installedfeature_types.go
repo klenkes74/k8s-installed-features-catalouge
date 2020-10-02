@@ -17,7 +17,13 @@
 package v1alpha1
 
 import (
+	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	// Seperator is the default
+	Separator = '/'
 )
 
 // InstaledFeatureGroupListedFeature defines subfeatures by namespace and name
@@ -26,6 +32,10 @@ type InstalledFeatureRef struct {
 	Namespace string `json:"namespace,omitempty"`
 	// Name is the name of the feature listed
 	Name string `json:"name"`
+}
+
+func (n InstalledFeatureRef) String() string {
+	return fmt.Sprintf("%s%c%s", n.Namespace, Separator, n.Name)
 }
 
 // InstalledFeatureSpec defines the desired state of InstalledFeature
@@ -95,6 +105,11 @@ type InstalledFeature struct {
 
 	Spec   InstalledFeatureSpec   `json:"spec,omitempty"`
 	Status InstalledFeatureStatus `json:"status,omitempty"`
+}
+
+func (ift InstalledFeature) String() string {
+	return fmt.Sprintf("%s%c%s", ift.Namespace, Separator, ift.Name)
+
 }
 
 // +kubebuilder:object:root=true
