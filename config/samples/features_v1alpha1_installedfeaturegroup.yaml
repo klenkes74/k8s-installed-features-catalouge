@@ -2,6 +2,7 @@ apiVersion: features.kaiserpfalz-edv.de/v1alpha1
 kind: InstalledFeatureGroup
 metadata:
   name: cluster-info
+  namespace: default
 spec:
   provider: Kaiserpfalz EDV-Service, Roland T. Lichti
   description: |+
