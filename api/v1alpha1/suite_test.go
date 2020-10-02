@@ -82,7 +82,7 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).ToNot(HaveOccurred())
 	err = (&installedfeaturegroup.Reconciler{
 		Client: controllers.OcpClientProd{Client: k8sManager.GetClient()},
-		Log:    ctrl.Log.WithName("controllers").WithName("InstalledFeature"),
+		Log:    ctrl.Log.WithName("controllers").WithName("InstalledFeaturegroup"),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

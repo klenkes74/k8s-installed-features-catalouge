@@ -62,7 +62,7 @@ var _ = Describe("InstalledFeature controller", func() {
 			result, err := sut.Reconcile(iftReconcileRequest)
 
 			Expect(result).Should(Equal(reconcile.Result{Requeue: false}))
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ShouldNot(HaveOccurred())
 		})
 
 		It("should add the finalizer when the finalizer is not set", func() {
@@ -82,7 +82,26 @@ var _ = Describe("InstalledFeature controller", func() {
 
 			result, err := sut.Reconcile(iftReconcileRequest)
 			Expect(result).Should(Equal(reconcile.Result{Requeue: false}))
-			Expect(err).ToNot(HaveOccurred())
+			Expect(err).ShouldNot(HaveOccurred())
+		})
+
+		It("should remove the finalizer when the instance is deleted", func() {
+			By("By creating a new InstalledFeature without finalizer")
+
+			ift := createIFTG(name, namespace, provider, description, uri, true, true)
+			client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+			expected := copyIFTG(ift)
+			expected.Finalizers = make([]string, 0)
+
+			client.EXPECT().SaveInstalledFeatureGroup(gomock.Any(), expected).Return(nil)
+
+			client.EXPECT().GetInstalledFeatureGroupPatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
+			client.EXPECT().PatchInstalledFeatureGroupStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			result, err := sut.Reconcile(iftReconcileRequest)
+			Expect(result).Should(Equal(reconcile.Result{Requeue: false}))
+			Expect(err).ShouldNot(HaveOccurred())
 		})
 	})
 
@@ -103,7 +122,7 @@ var _ = Describe("InstalledFeature controller", func() {
 			client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftLookupKey).Return(nil, errors.New("some error"))
 
 			result, err := sut.Reconcile(iftReconcileRequest)
-			Expect(result).Should(Equal(reconcile.Result{Requeue: true, RequeueAfter: 10}))
+			Expect(result).Should(Equal(reconcile.Result{RequeueAfter: 60}))
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -131,7 +150,25 @@ var _ = Describe("InstalledFeature controller", func() {
 			client.EXPECT().SaveInstalledFeatureGroup(gomock.Any(), expected).Return(errors.New("some error"))
 
 			result, err := sut.Reconcile(iftReconcileRequest)
-			Expect(result).Should(Equal(reconcile.Result{Requeue: true, RequeueAfter: 10}))
+			Expect(result).Should(Equal(reconcile.Result{RequeueAfter: 60}))
+			Expect(err).To(HaveOccurred())
+
+		})
+
+		It("should requeue request when writing the reconciled object fails", func() {
+			By("By getting a failure while saving the data back into the k8s cluster")
+
+			ift := createIFTG(name, namespace, provider, description, uri, false, false)
+			client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+			expected := copyIFTG(ift)
+			expected.Finalizers = make([]string, 1)
+			expected.Finalizers[0] = FinalizerName
+
+			client.EXPECT().SaveInstalledFeatureGroup(gomock.Any(), expected).Return(errors.New("some error"))
+
+			result, err := sut.Reconcile(iftReconcileRequest)
+			Expect(result).Should(Equal(reconcile.Result{RequeueAfter: 60}))
 			Expect(err).To(HaveOccurred())
 
 		})
@@ -149,7 +186,7 @@ var _ = Describe("InstalledFeature controller", func() {
 
 			result, err := sut.Reconcile(iftReconcileRequest)
 
-			Expect(result).Should(Equal(reconcile.Result{Requeue: true, RequeueAfter: 10}))
+			Expect(result).Should(Equal(reconcile.Result{RequeueAfter: 60}))
 			Expect(err).To(HaveOccurred())
 		})
 	})
