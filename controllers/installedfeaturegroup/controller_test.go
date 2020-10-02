@@ -136,6 +136,24 @@ var _ = Describe("InstalledFeature controller", func() {
 
 		})
 
+		It("should requeue request when writing the reconciled object fails", func() {
+			By("By getting a failure while saving the data back into the k8s cluster")
+
+			ift := createIFTG(name, namespace, provider, description, uri, false, false)
+			client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+			expected := copyIFTG(ift)
+			expected.Finalizers = make([]string, 1)
+			expected.Finalizers[0] = FinalizerName
+
+			client.EXPECT().SaveInstalledFeatureGroup(gomock.Any(), expected).Return(errors.New("some error"))
+
+			result, err := sut.Reconcile(iftReconcileRequest)
+			Expect(result).Should(Equal(reconcile.Result{RequeueAfter: 60}))
+			Expect(err).To(HaveOccurred())
+
+		})
+
 		It("should requeue the request when updating the status fails", func() {
 			By("By getting an error when updating the status")
 

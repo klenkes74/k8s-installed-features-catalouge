@@ -52,7 +52,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	reqLogger := r.Log.WithValues("installedfeaturegroup", req.NamespacedName)
+	reqLogger := r.Log.WithValues("installed-feature-group", req.NamespacedName)
 	reqLogger.Info("working on", "ctx", ctx)
 
 	changed := false
@@ -66,15 +66,12 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{RequeueAfter: 60}, err
 	}
 
-	changed, err = r.handleFinalizer(ctx, instance, reqLogger, changed)
-	if err != nil {
-		return ctrl.Result{RequeueAfter: 60}, err
-	}
+	changed = r.handleFinalizer(ctx, instance, reqLogger, changed)
 
 	return r.handleUpdate(ctx, instance, reqLogger, changed)
 }
 
-func (r *Reconciler) handleFinalizer(ctx context.Context, instance *featuresv1alpha1.InstalledFeatureGroup, reqLogger logr.Logger, changed bool) (bool, error) {
+func (r *Reconciler) handleFinalizer(_ context.Context, instance *featuresv1alpha1.InstalledFeatureGroup, reqLogger logr.Logger, changed bool) bool {
 	if !controllerutil.ContainsFinalizer(instance, FinalizerName) && instance.DeletionTimestamp == nil {
 		reqLogger.Info("adding finalizer")
 
@@ -88,16 +85,16 @@ func (r *Reconciler) handleFinalizer(ctx context.Context, instance *featuresv1al
 
 		changed = true
 	}
-	return changed, nil
+	return changed
 }
 
 func (r *Reconciler) handleUpdate(ctx context.Context, instance *featuresv1alpha1.InstalledFeatureGroup, reqLogger logr.Logger, changed bool) (ctrl.Result, error) {
 	if changed {
-		reqLogger.Info("rewriting the installedfeaturegroup")
+		reqLogger.Info("rewriting the InstalledFeatureGroup")
 
 		err := r.Client.SaveInstalledFeatureGroup(ctx, instance)
 		if err != nil {
-			r.Log.Error(err, "could not rewrite the installedfeaturegroup")
+			r.Log.Error(err, "could not rewrite the InstalledFeatureGroup")
 
 			return ctrl.Result{RequeueAfter: 60}, err
 		}
