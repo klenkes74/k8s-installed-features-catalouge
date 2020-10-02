@@ -63,27 +63,35 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{Requeue: false}, err
 		}
 
-		return ctrl.Result{Requeue: true, RequeueAfter: 10}, err
+		return ctrl.Result{RequeueAfter: 60}, err
 	}
 
-	changed = r.handleFinalizer(instance, changed)
-	return r.handleUpdate(changed, reqLogger, ctx, instance)
+	changed, err = r.handleFinalizer(ctx, instance, reqLogger, changed)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: 60}, err
+	}
+
+	return r.handleUpdate(ctx, instance, reqLogger, changed)
 }
 
-func (r *Reconciler) handleFinalizer(instance *featuresv1alpha1.InstalledFeatureGroup, changed bool) bool {
+func (r *Reconciler) handleFinalizer(ctx context.Context, instance *featuresv1alpha1.InstalledFeatureGroup, reqLogger logr.Logger, changed bool) (bool, error) {
 	if !controllerutil.ContainsFinalizer(instance, FinalizerName) && instance.DeletionTimestamp == nil {
+		reqLogger.Info("adding finalizer")
+
 		controllerutil.AddFinalizer(instance, FinalizerName)
 
 		changed = true
 	} else if controllerutil.ContainsFinalizer(instance, FinalizerName) && instance.DeletionTimestamp != nil {
+		reqLogger.Info("removing finalizer")
+
 		controllerutil.RemoveFinalizer(instance, FinalizerName)
 
 		changed = true
 	}
-	return changed
+	return changed, nil
 }
 
-func (r *Reconciler) handleUpdate(changed bool, reqLogger logr.Logger, ctx context.Context, instance *featuresv1alpha1.InstalledFeatureGroup) (ctrl.Result, error) {
+func (r *Reconciler) handleUpdate(ctx context.Context, instance *featuresv1alpha1.InstalledFeatureGroup, reqLogger logr.Logger, changed bool) (ctrl.Result, error) {
 	if changed {
 		reqLogger.Info("rewriting the installedfeaturegroup")
 
@@ -91,25 +99,24 @@ func (r *Reconciler) handleUpdate(changed bool, reqLogger logr.Logger, ctx conte
 		if err != nil {
 			r.Log.Error(err, "could not rewrite the installedfeaturegroup")
 
-			return ctrl.Result{Requeue: true, RequeueAfter: 10}, err
+			return ctrl.Result{RequeueAfter: 60}, err
 		}
 	}
 
+	statusChanged := false
+	status := r.Client.GetInstalledFeatureGroupPatchBase(instance)
 	if instance.Status.Phase == "" {
-		err := r.modifyStatus(ctx, instance, "provisioned", "ok")
-		if err != nil {
-			reqLogger.Error(err, "could not set the status to the installedfeature")
+		instance.Status.Phase = "provisioned"
+		instance.Status.Message = ""
+		statusChanged = true
+	}
 
-			return ctrl.Result{RequeueAfter: 10, Requeue: true}, err
+	if statusChanged {
+		err := r.Client.PatchInstalledFeatureGroupStatus(ctx, instance, status)
+		if err != nil {
+			return ctrl.Result{RequeueAfter: 60}, err
 		}
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func (r *Reconciler) modifyStatus(ctx context.Context, instance *featuresv1alpha1.InstalledFeatureGroup, phase string, message string) error {
-	status := r.Client.GetInstalledFeatureGroupPatchBase(instance)
-	instance.Status.Phase = phase
-	instance.Status.Message = message
-	return r.Client.PatchInstalledFeatureGroupStatus(ctx, instance, status)
 }

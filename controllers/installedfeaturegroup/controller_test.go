@@ -103,7 +103,7 @@ var _ = Describe("InstalledFeature controller", func() {
 			client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftLookupKey).Return(nil, errors.New("some error"))
 
 			result, err := sut.Reconcile(iftReconcileRequest)
-			Expect(result).Should(Equal(reconcile.Result{Requeue: true, RequeueAfter: 10}))
+			Expect(result).Should(Equal(reconcile.Result{RequeueAfter: 60}))
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -131,7 +131,7 @@ var _ = Describe("InstalledFeature controller", func() {
 			client.EXPECT().SaveInstalledFeatureGroup(gomock.Any(), expected).Return(errors.New("some error"))
 
 			result, err := sut.Reconcile(iftReconcileRequest)
-			Expect(result).Should(Equal(reconcile.Result{Requeue: true, RequeueAfter: 10}))
+			Expect(result).Should(Equal(reconcile.Result{RequeueAfter: 60}))
 			Expect(err).To(HaveOccurred())
 
 		})
@@ -149,7 +149,7 @@ var _ = Describe("InstalledFeature controller", func() {
 
 			result, err := sut.Reconcile(iftReconcileRequest)
 
-			Expect(result).Should(Equal(reconcile.Result{Requeue: true, RequeueAfter: 10}))
+			Expect(result).Should(Equal(reconcile.Result{RequeueAfter: 60}))
 			Expect(err).To(HaveOccurred())
 		})
 	})

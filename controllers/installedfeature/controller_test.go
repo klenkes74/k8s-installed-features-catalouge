@@ -206,7 +206,7 @@ var _ = Describe("InstalledFeature controller", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("should ignore the problem when IFTG can't be loaded", func() {
+		It("should requeue the request when IFTG can't be loaded", func() {
 			ift := createIFT(name, namespace, version, provider, description, uri, false, true)
 			setGroupToIFT(ift, group, namespace)
 
@@ -214,13 +214,10 @@ var _ = Describe("InstalledFeature controller", func() {
 
 			client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftgLookupKey).Return(nil, errors.New("can not load IFTG"))
 
-			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
-			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-
 			result, err := sut.Reconcile(iftReconcileRequest)
 
-			Expect(result).Should(Equal(reconcile.Result{Requeue: false}))
-			Expect(err).ToNot(HaveOccurred())
+			Expect(result).Should(Equal(reconcile.Result{RequeueAfter: 60}))
+			Expect(err).To(HaveOccurred())
 		})
 	})
 
@@ -231,7 +228,7 @@ var _ = Describe("InstalledFeature controller", func() {
 			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(nil, errors.New("some error"))
 
 			result, err := sut.Reconcile(iftReconcileRequest)
-			Expect(result).Should(Equal(reconcile.Result{Requeue: true, RequeueAfter: 10}))
+			Expect(result).Should(Equal(reconcile.Result{RequeueAfter: 60}))
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -259,7 +256,7 @@ var _ = Describe("InstalledFeature controller", func() {
 			client.EXPECT().SaveInstalledFeature(gomock.Any(), expected).Return(errors.New("some error"))
 
 			result, err := sut.Reconcile(iftReconcileRequest)
-			Expect(result).Should(Equal(reconcile.Result{Requeue: true, RequeueAfter: 10}))
+			Expect(result).Should(Equal(reconcile.Result{RequeueAfter: 60}))
 			Expect(err).To(HaveOccurred())
 
 		})
@@ -267,17 +264,21 @@ var _ = Describe("InstalledFeature controller", func() {
 		It("should requeue the request when updating the status fails", func() {
 			By("By getting an error when updating the status")
 
-			ift := createIFT(name, namespace, version, provider, description, uri, true, false)
+			ift := createIFT(name, namespace, version, provider, description, uri, false, false)
 			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
 
-			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
-			client.EXPECT().
-				PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).
-				Return(errors.New("patching failed"))
+			expected := copyIFT(ift)
+			expected.Finalizers = make([]string, 1)
+			expected.Finalizers[0] = FinalizerName
+
+			client.EXPECT().SaveInstalledFeature(gomock.Any(), expected).Return(nil)
+
+			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(expected))
+			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("patching status failed"))
 
 			result, err := sut.Reconcile(iftReconcileRequest)
 
-			Expect(result).Should(Equal(reconcile.Result{Requeue: true, RequeueAfter: 10}))
+			Expect(result).Should(Equal(reconcile.Result{RequeueAfter: 60}))
 			Expect(err).To(HaveOccurred())
 		})
 	})

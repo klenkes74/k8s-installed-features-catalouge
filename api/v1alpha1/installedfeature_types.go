@@ -53,11 +53,8 @@ type InstalledFeatureSpec struct {
 // InstalledFeatureDependency is for listing dependent or conflicting features. They are specified by group, Kind and
 // version. With the version being MinVersion and MaxVersion.
 type InstalledFeatureDependency struct {
-	// Group is the preferred group of the resource.  Empty implies the group of the containing resource list.
-	// For subresources, this may have a different value, for example: Scale".
-	Group InstalledFeatureRef `json:"group,omitempty"`
-	// Kind is the kind for the resource (e.g. 'Foo' is the kind for a resource 'foo')
-	Kind string `json:"kind" protobuf:"bytes,3,opt,name=kind"`
+	// Feature is a reference to the feature installed
+	Feature InstalledFeatureRef `json:"kind"`
 	// MinVersion is the preferred version of the resource.  Empty implies the version of the containing resource list
 	// For subresources, this may have a different value, for example: v1 (while inside a v1beta1 version of the core resource's group)".
 	// The MinVersion is included.
@@ -80,7 +77,7 @@ type InstalledFeatureStatus struct {
 	// ConflictingFeatures contains the conflicting feature.
 	ConflictingFeatures []InstalledFeatureDependency `json:"conflicting-features,omitempty"`
 	// DependingFeatures contains all features, that depend on this feature
-	DependingFeatures []InstalledFeatureRef `josn:"depending-features,omitempty"`
+	DependingFeatures []InstalledFeatureRef `json:"depending-features,omitempty"`
 }
 
 // +kubebuilder:object:root=true

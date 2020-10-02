@@ -60,8 +60,8 @@ var _ = Describe("InstalledFeatureGroup API", func() {
 				Message: "provisioned without problems",
 			},
 		}
-		ctx          = context.Background()
-		iftLookupKey = types.NamespacedName{Name: name, Namespace: namespace}
+		ctx           = context.Background()
+		iftgLookupKey = types.NamespacedName{Name: name, Namespace: namespace}
 	)
 
 	Context("When installing a InstalledFeature CR", func() {
@@ -72,7 +72,7 @@ var _ = Describe("InstalledFeatureGroup API", func() {
 
 			createdIft := &InstalledFeatureGroup{}
 			Eventually(func() bool {
-				err := k8sClient.Get(ctx, iftLookupKey, createdIft)
+				err := k8sClient.Get(ctx, iftgLookupKey, createdIft)
 				if err != nil {
 					return false
 				}
@@ -92,7 +92,7 @@ var _ = Describe("InstalledFeatureGroup API", func() {
 
 			createdIft := &InstalledFeatureGroup{}
 			Eventually(func() bool {
-				err := k8sClient.Get(ctx, iftLookupKey, createdIft)
+				err := k8sClient.Get(ctx, iftgLookupKey, createdIft)
 				if errors.IsNotFound(err) {
 					return true
 				}

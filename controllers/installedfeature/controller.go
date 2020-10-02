@@ -64,21 +64,119 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{Requeue: false}, err
 		}
 
-		return ctrl.Result{Requeue: true, RequeueAfter: 10}, err
+		return ctrl.Result{RequeueAfter: 60}, err
 	}
 
-	changed = r.handleGroupEntry(ctx, instance, reqLogger, changed)
-	changed = r.handleFinalizer(ctx, instance, reqLogger, changed)
+	changed, err = r.handleDependingOn(ctx, instance, reqLogger, changed)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: 60}, err
+	}
+
+	changed, err = r.handleGroupEntry(ctx, instance, reqLogger, changed)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: 60}, err
+	}
+
+	changed, err = r.handleFinalizer(ctx, instance, reqLogger, changed)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: 60}, err
+	}
 
 	return r.handleUpdate(ctx, instance, reqLogger, changed)
 }
 
-func (r *Reconciler) handleGroupEntry(ctx context.Context, instance *featuresv1alpha1.InstalledFeature, reqLogger logr.Logger, changed bool) bool {
+func (r *Reconciler) handleDependingOn(ctx context.Context, instance *featuresv1alpha1.InstalledFeature, reqLogger logr.Logger, changed bool) (bool, error) {
+	if instance.Spec.DependsOn == nil || len(instance.Spec.DependsOn) == 0 {
+		return changed, nil
+	}
+
+	reqLogger.Info("handling dependencies")
+
+	status := r.Client.GetInstalledFeaturePatchBase(instance)
+
+	for _, dependency := range instance.Spec.DependsOn {
+		locator := types.NamespacedName{
+			Namespace: dependency.Feature.Namespace,
+			Name:      dependency.Feature.Name,
+		}
+
+		ift, err := r.Client.LoadInstalledFeature(ctx, locator)
+		if err != nil || ift.DeletionTimestamp != nil {
+			r.markDependencyAsMissing(instance, dependency, reqLogger)
+
+			continue // next dependency
+		}
+
+		reqLogger.Info("working on dependency", "dependency", dependency.Feature)
+
+		iftStatus := r.Client.GetInstalledFeaturePatchBase(ift)
+
+		if ift.Status.DependingFeatures == nil && instance.DeletionTimestamp == nil {
+			ift.Status.DependingFeatures = make([]featuresv1alpha1.InstalledFeatureRef, 0)
+		}
+
+		alreadyRegistered := false
+		for i, ft := range ift.Status.DependingFeatures {
+			if ft.Namespace == instance.Namespace && ft.Name == instance.Name {
+				alreadyRegistered = true
+
+				if instance.DeletionTimestamp != nil {
+					reqLogger.Info("instance is deleted - remove registered depending feature", "feature", ift.Name)
+
+					ift.Status.DependingFeatures[i] = ift.Status.DependingFeatures[len(ift.Status.DependingFeatures)-1]
+					// We do not need to put s[i] at the end, as it will be discarded anyway
+					ift.Status.DependingFeatures = ift.Status.DependingFeatures[:len(ift.Status.DependingFeatures)-1]
+				} else {
+					reqLogger.Info("feature already registered as depending feature", "feature", ift.Name)
+				}
+				break
+			}
+		}
+
+		if !alreadyRegistered && instance.DeletionTimestamp == nil {
+			ift.Status.DependingFeatures = append(ift.Status.DependingFeatures, featuresv1alpha1.InstalledFeatureRef{
+				Namespace: instance.Namespace,
+				Name:      instance.Name,
+			})
+		}
+
+		err = r.Client.PatchInstalledFeatureStatus(ctx, ift, iftStatus)
+		if err != nil {
+			reqLogger.Info("can not update entry with dependency information", "feature", ift)
+
+			return changed, err
+		}
+	}
+
+	err := r.Client.PatchInstalledFeatureStatus(ctx, instance, status)
+	if err != nil {
+		reqLogger.Info("dependency status could not be set.")
+
+		return changed, err
+	}
+
+	reqLogger.Info("added the dependency to status")
+	return changed, nil
+}
+
+func (r *Reconciler) markDependencyAsMissing(instance *featuresv1alpha1.InstalledFeature, dependency featuresv1alpha1.InstalledFeatureDependency, reqLogger logr.Logger) {
+	reqLogger.Info("can not load feature we depend on", "feature", dependency.Feature)
+
+	if instance.Status.MissingDependencies == nil {
+		instance.Status.MissingDependencies = make([]featuresv1alpha1.InstalledFeatureDependency, 0)
+	}
+
+	instance.Status.MissingDependencies = append(instance.Status.MissingDependencies, dependency)
+}
+
+func (r *Reconciler) handleGroupEntry(ctx context.Context, instance *featuresv1alpha1.InstalledFeature, reqLogger logr.Logger, changed bool) (bool, error) {
 	if instance.Spec.Group == nil {
-		return changed
+		return changed, nil
 	}
 
 	log := reqLogger.WithValues("group", instance.Spec.Group)
+
+	log.Info("handling group entry")
 
 	group, err := r.Client.LoadInstalledFeatureGroup(ctx, types.NamespacedName{
 		Namespace: instance.Spec.Group.Namespace,
@@ -87,7 +185,7 @@ func (r *Reconciler) handleGroupEntry(ctx context.Context, instance *featuresv1a
 	if err != nil {
 		log.Info("could not load group - will not update the group information")
 
-		return changed
+		return changed, err
 	}
 
 	patch := r.Client.GetInstalledFeatureGroupPatchBase(group)
@@ -96,7 +194,7 @@ func (r *Reconciler) handleGroupEntry(ctx context.Context, instance *featuresv1a
 			if feature.Name == instance.Name && feature.Namespace == instance.Namespace {
 				if instance.DeletionTimestamp == nil {
 					log.Info("feature already listed in feature group")
-					return changed
+					return changed, nil
 				} else {
 					log.Info("removing feature from feature group")
 
@@ -120,9 +218,8 @@ func (r *Reconciler) handleGroupEntry(ctx context.Context, instance *featuresv1a
 			Name:      instance.Name,
 		}
 	}
-	r.Client.PatchInstalledFeatureGroupStatus(ctx, group, patch)
 
-	return changed
+	return changed, r.Client.PatchInstalledFeatureGroupStatus(ctx, group, patch)
 }
 
 func (r *Reconciler) removeFromGroup(features []featuresv1alpha1.InstalledFeatureGroupListedFeature, pos int) []featuresv1alpha1.InstalledFeatureGroupListedFeature {
@@ -130,7 +227,9 @@ func (r *Reconciler) removeFromGroup(features []featuresv1alpha1.InstalledFeatur
 	return features[:len(features)-1]
 }
 
-func (r *Reconciler) handleFinalizer(_ context.Context, instance *featuresv1alpha1.InstalledFeature, reqLogger logr.Logger, changed bool) bool {
+func (r *Reconciler) handleFinalizer(_ context.Context, instance *featuresv1alpha1.InstalledFeature, reqLogger logr.Logger, changed bool) (bool, error) {
+	reqLogger.Info("handling finalizer")
+
 	if !controllerutil.ContainsFinalizer(instance, FinalizerName) && instance.DeletionTimestamp == nil {
 		reqLogger.Info("adding finalizer")
 		controllerutil.AddFinalizer(instance, FinalizerName)
@@ -142,36 +241,45 @@ func (r *Reconciler) handleFinalizer(_ context.Context, instance *featuresv1alph
 
 		changed = true
 	}
-	return changed
+
+	return changed, nil
 }
 
 func (r *Reconciler) handleUpdate(ctx context.Context, instance *featuresv1alpha1.InstalledFeature, reqLogger logr.Logger, changed bool) (ctrl.Result, error) {
 	if changed {
-		reqLogger.Info("rewriting the installedfeature")
-
 		err := r.Client.SaveInstalledFeature(ctx, instance)
 		if err != nil {
 			reqLogger.Error(err, "could not rewrite the installedfeature")
 
-			return ctrl.Result{Requeue: true, RequeueAfter: 10}, err
+			return ctrl.Result{RequeueAfter: 60}, err
 		}
 	}
 
-	if instance.Status.Phase == "" {
-		err := r.modifyStatus(ctx, instance, "provisioned", "ok")
+	statusChanged := false
+	status := r.Client.GetInstalledFeaturePatchBase(instance)
+
+	if len(instance.Status.MissingDependencies) > 0 {
+		instance.Status.Phase = "pending"
+		instance.Status.Message = "dependencies are missing"
+		statusChanged = true
+	} else if len(instance.Status.ConflictingFeatures) > 0 {
+		instance.Status.Phase = "pending"
+		instance.Status.Message = "there are conflicting features"
+		statusChanged = true
+	} else if instance.Status.Phase != "provisioned" {
+		instance.Status.Phase = "provisioned"
+		instance.Status.Message = ""
+		statusChanged = true
+	}
+
+	if statusChanged {
+		err := r.Client.PatchInstalledFeatureStatus(ctx, instance, status)
 		if err != nil {
 			reqLogger.Error(err, "could not set the status to the installedfeature")
 
-			return ctrl.Result{RequeueAfter: 10, Requeue: true}, err
+			return ctrl.Result{RequeueAfter: 60}, err
 		}
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func (r *Reconciler) modifyStatus(ctx context.Context, instance *featuresv1alpha1.InstalledFeature, phase string, message string) error {
-	status := r.Client.GetInstalledFeaturePatchBase(instance)
-	instance.Status.Phase = phase
-	instance.Status.Message = message
-	return r.Client.PatchInstalledFeatureStatus(ctx, instance, status)
 }

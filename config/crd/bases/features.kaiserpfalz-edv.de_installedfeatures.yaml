@@ -21,6 +21,9 @@ spec:
     - JSONPath: .spec.uri
       name: Documentation
       type: string
+    - JSONPath: .status.phase
+      name: State
+      type: string
   group: features.kaiserpfalz-edv.de
   names:
     kind: InstalledFeature
@@ -59,10 +62,8 @@ spec:
                   conflicting features. They are specified by group, Kind and version.
                   With the version being MinVersion and MaxVersion.
                 properties:
-                  group:
-                    description: 'Group is the preferred group of the resource.  Empty
-                      implies the group of the containing resource list. For subresources,
-                      this may have a different value, for example: Scale".'
+                  kind:
+                    description: Feature is a reference to the feature installed
                     properties:
                       name:
                         description: Name is the name of the feature listed
@@ -73,10 +74,6 @@ spec:
                     required:
                       - name
                     type: object
-                  kind:
-                    description: Kind is the kind for the resource (e.g. 'Foo' is
-                      the kind for a resource 'foo')
-                    type: string
                   max-version:
                     description: 'MinVersion is the preferred version of the resource.  Empty
                       implies the version of the containing resource list For subresources,
@@ -104,10 +101,8 @@ spec:
                   conflicting features. They are specified by group, Kind and version.
                   With the version being MinVersion and MaxVersion.
                 properties:
-                  group:
-                    description: 'Group is the preferred group of the resource.  Empty
-                      implies the group of the containing resource list. For subresources,
-                      this may have a different value, for example: Scale".'
+                  kind:
+                    description: Feature is a reference to the feature installed
                     properties:
                       name:
                         description: Name is the name of the feature listed
@@ -118,10 +113,6 @@ spec:
                     required:
                       - name
                     type: object
-                  kind:
-                    description: Kind is the kind for the resource (e.g. 'Foo' is
-                      the kind for a resource 'foo')
-                    type: string
                   max-version:
                     description: 'MinVersion is the preferred version of the resource.  Empty
                       implies the version of the containing resource list For subresources,
@@ -188,10 +179,8 @@ spec:
                   conflicting features. They are specified by group, Kind and version.
                   With the version being MinVersion and MaxVersion.
                 properties:
-                  group:
-                    description: 'Group is the preferred group of the resource.  Empty
-                      implies the group of the containing resource list. For subresources,
-                      this may have a different value, for example: Scale".'
+                  kind:
+                    description: Feature is a reference to the feature installed
                     properties:
                       name:
                         description: Name is the name of the feature listed
@@ -202,10 +191,6 @@ spec:
                     required:
                       - name
                     type: object
-                  kind:
-                    description: Kind is the kind for the resource (e.g. 'Foo' is
-                      the kind for a resource 'foo')
-                    type: string
                   max-version:
                     description: 'MinVersion is the preferred version of the resource.  Empty
                       implies the version of the containing resource list For subresources,
@@ -225,6 +210,23 @@ spec:
                   - kind
                 type: object
               type: array
+            depending-features:
+              description: DependingFeatures contains all features, that depend on
+                this feature
+              items:
+                description: InstaledFeatureGroupListedFeature defines subfeatures
+                  by namespace and name
+                properties:
+                  name:
+                    description: Name is the name of the feature listed
+                    type: string
+                  namespace:
+                    description: Namespace is the namespace of the feature listed
+                    type: string
+                required:
+                  - name
+                type: object
+              type: array
             message:
               description: Message is a human readable message for this state.
               type: string
@@ -235,10 +237,8 @@ spec:
                   conflicting features. They are specified by group, Kind and version.
                   With the version being MinVersion and MaxVersion.
                 properties:
-                  group:
-                    description: 'Group is the preferred group of the resource.  Empty
-                      implies the group of the containing resource list. For subresources,
-                      this may have a different value, for example: Scale".'
+                  kind:
+                    description: Feature is a reference to the feature installed
                     properties:
                       name:
                         description: Name is the name of the feature listed
@@ -249,10 +249,6 @@ spec:
                     required:
                       - name
                     type: object
-                  kind:
-                    description: Kind is the kind for the resource (e.g. 'Foo' is
-                      the kind for a resource 'foo')
-                    type: string
                   max-version:
                     description: 'MinVersion is the preferred version of the resource.  Empty
                       implies the version of the containing resource list For subresources,
