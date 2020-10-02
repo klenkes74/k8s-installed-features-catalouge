@@ -18,6 +18,7 @@ package installedfeature
 
 import (
 	"context"
+	"fmt"
 	"github.com/klenkes74/k8s-installed-features-catalogue/controllers"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -77,10 +78,7 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{RequeueAfter: 60}, err
 	}
 
-	changed, err = r.handleFinalizer(ctx, instance, reqLogger, changed)
-	if err != nil {
-		return ctrl.Result{RequeueAfter: 60}, err
-	}
+	changed = r.handleFinalizer(ctx, instance, reqLogger, changed)
 
 	return r.handleUpdate(ctx, instance, reqLogger, changed)
 }
@@ -94,6 +92,7 @@ func (r *Reconciler) handleDependingOn(ctx context.Context, instance *featuresv1
 
 	status := r.Client.GetInstalledFeaturePatchBase(instance)
 
+	missingDependencies := make([]featuresv1alpha1.InstalledFeatureRef, 0)
 	for _, dependency := range instance.Spec.DependsOn {
 		locator := types.NamespacedName{
 			Namespace: dependency.Feature.Namespace,
@@ -103,18 +102,18 @@ func (r *Reconciler) handleDependingOn(ctx context.Context, instance *featuresv1
 		ift, err := r.Client.LoadInstalledFeature(ctx, locator)
 		if err != nil || ift.DeletionTimestamp != nil {
 			r.markDependencyAsMissing(instance, dependency, reqLogger)
-
+			missingDependencies = append(missingDependencies, dependency.Feature)
 			continue // next dependency
 		}
 
 		reqLogger.Info("working on dependency", "dependency", dependency.Feature)
 
-		iftStatus := r.Client.GetInstalledFeaturePatchBase(ift)
-
 		if ift.Status.DependingFeatures == nil && instance.DeletionTimestamp == nil {
 			ift.Status.DependingFeatures = make([]featuresv1alpha1.InstalledFeatureRef, 0)
 		}
+		iftStatus := r.Client.GetInstalledFeaturePatchBase(ift)
 
+		dependencyChanged := true
 		alreadyRegistered := false
 		for i, ft := range ift.Status.DependingFeatures {
 			if ft.Namespace == instance.Namespace && ft.Name == instance.Name {
@@ -128,6 +127,7 @@ func (r *Reconciler) handleDependingOn(ctx context.Context, instance *featuresv1
 					ift.Status.DependingFeatures = ift.Status.DependingFeatures[:len(ift.Status.DependingFeatures)-1]
 				} else {
 					reqLogger.Info("feature already registered as depending feature", "feature", ift.Name)
+					dependencyChanged = false
 				}
 				break
 			}
@@ -140,11 +140,13 @@ func (r *Reconciler) handleDependingOn(ctx context.Context, instance *featuresv1
 			})
 		}
 
-		err = r.Client.PatchInstalledFeatureStatus(ctx, ift, iftStatus)
-		if err != nil {
-			reqLogger.Info("can not update entry with dependency information", "feature", ift)
+		if dependencyChanged {
+			err = r.Client.PatchInstalledFeatureStatus(ctx, ift, iftStatus)
+			if err != nil {
+				reqLogger.Info("can not update entry with dependency information", "feature", ift)
 
-			return changed, err
+				return changed, err
+			}
 		}
 	}
 
@@ -153,6 +155,10 @@ func (r *Reconciler) handleDependingOn(ctx context.Context, instance *featuresv1
 		reqLogger.Info("dependency status could not be set.")
 
 		return changed, err
+	}
+
+	if len(missingDependencies) > 0 {
+		return changed, fmt.Errorf("missing dependencies: %v", missingDependencies)
 	}
 
 	reqLogger.Info("added the dependency to status")
@@ -227,7 +233,7 @@ func (r *Reconciler) removeFromGroup(features []featuresv1alpha1.InstalledFeatur
 	return features[:len(features)-1]
 }
 
-func (r *Reconciler) handleFinalizer(_ context.Context, instance *featuresv1alpha1.InstalledFeature, reqLogger logr.Logger, changed bool) (bool, error) {
+func (r *Reconciler) handleFinalizer(_ context.Context, instance *featuresv1alpha1.InstalledFeature, reqLogger logr.Logger, changed bool) bool {
 	reqLogger.Info("handling finalizer")
 
 	if !controllerutil.ContainsFinalizer(instance, FinalizerName) && instance.DeletionTimestamp == nil {
@@ -242,7 +248,7 @@ func (r *Reconciler) handleFinalizer(_ context.Context, instance *featuresv1alph
 		changed = true
 	}
 
-	return changed, nil
+	return changed
 }
 
 func (r *Reconciler) handleUpdate(ctx context.Context, instance *featuresv1alpha1.InstalledFeature, reqLogger logr.Logger, changed bool) (ctrl.Result, error) {

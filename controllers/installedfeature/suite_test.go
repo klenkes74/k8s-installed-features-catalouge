@@ -51,7 +51,7 @@ func TestInstalledFeatureController(t *testing.T) {
 		[]Reporter{printer.NewlineReporter{}})
 }
 
-var _ = BeforeSuite(func() {
+var _ = BeforeEach(func() {
 	logf.SetLogger(zap.New(zap.UseDevMode(true), zap.WriteTo(GinkgoWriter)))
 
 	scheme := runtime.NewScheme()
@@ -68,7 +68,7 @@ var _ = BeforeSuite(func() {
 	}
 })
 
-var _ = AfterSuite(func() {
+var _ = AfterEach(func() {
 	By("tearing down the mock controller")
 	ctrlMock.Finish()
 })
