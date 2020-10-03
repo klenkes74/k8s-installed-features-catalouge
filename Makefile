@@ -1,5 +1,5 @@
 # Current Operator version
-VERSION ?= 1.0.0-SNAPSHOT
+VERSION ?= 1.0.0
 # Default bundle image tag
 BUNDLE_IMG ?= controller-bundle:$(VERSION)
 # Options for 'bundle-build'
@@ -32,6 +32,9 @@ test: generate fmt vet manifests
 	mkdir -p ${ENVTEST_ASSETS_DIR}
 	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/master/hack/setup-envtest.sh
 	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go-acc --output cover.out ./... -- -v
+
+lint: generate fmt vet manifests
+	golangci-lint run ./...
 
 # Build manager binary
 manager: generate fmt vet

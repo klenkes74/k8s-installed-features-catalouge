@@ -73,11 +73,7 @@ var _ = Describe("InstalledFeatureGroup API", func() {
 			createdIft := &InstalledFeatureGroup{}
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, iftgLookupKey, createdIft)
-				if err != nil {
-					return false
-				}
-
-				return true
+				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
 			Expect(createdIft.ObjectMeta.Name).Should(Equal(name))
