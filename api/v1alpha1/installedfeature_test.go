@@ -127,11 +127,7 @@ var _ = Describe("InstalledFeature API", func() {
 			createdIftg := &InstalledFeatureGroup{}
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, iftgLookupKey, createdIftg)
-				if err != nil {
-					return false
-				}
-
-				return true
+				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
 			Expect(createdIftg.Spec.Uri).Should(Equal(uri))
@@ -143,11 +139,7 @@ var _ = Describe("InstalledFeature API", func() {
 			createdIft := &InstalledFeature{}
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, biftLookupKey, createdIft)
-				if err != nil {
-					return false
-				}
-
-				return true
+				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
 			Expect(createdIft.Name).Should(Equal(basename))
@@ -164,11 +156,7 @@ var _ = Describe("InstalledFeature API", func() {
 			createdIft := &InstalledFeature{}
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, iftLookupKey, createdIft)
-				if err != nil {
-					return false
-				}
-
-				return true
+				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
 			Expect(createdIft.Spec.Kind).Should(Equal(name))
