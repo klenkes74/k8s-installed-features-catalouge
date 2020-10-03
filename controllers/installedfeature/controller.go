@@ -82,6 +82,11 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return errorRequeue, err
 	}
 
+	changed, err = r.handleDependent(ctx, instance, reqLogger, changed)
+	if err != nil {
+		return ctrl.Result{RequeueAfter: 60}, err
+	}
+
 	changed, err = r.handleGroupEntry(ctx, instance, reqLogger, changed)
 	if err != nil {
 		return errorRequeue, err
