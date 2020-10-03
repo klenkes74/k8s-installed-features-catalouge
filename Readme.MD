@@ -15,7 +15,7 @@ all required features for you are installed ...
 
 
 ## License
-The license for the software is LGPL 3.0 or newer. 
+The software is licensed under Apache 2.0. 
 
 ## Usage
 

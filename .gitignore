@@ -1,5 +1,8 @@
 .idea/
-docs/generated/
-generated/
 *.iml
+testbin/
+bin/
+generated/
 /cover.out
+/api/v1alpha1/zz_generated.deepcopy.go
+/coverage.txt

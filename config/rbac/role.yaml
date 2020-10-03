@@ -9,6 +9,26 @@ rules:
   - apiGroups:
       - features.kaiserpfalz-edv.de
     resources:
+      - installedfeaturegroups
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - features.kaiserpfalz-edv.de
+    resources:
+      - installedfeaturegroups/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - features.kaiserpfalz-edv.de
+    resources:
       - installedfeatures
     verbs:
       - create

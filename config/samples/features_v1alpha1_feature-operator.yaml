@@ -3,20 +3,20 @@ kind: InstalledFeature
 apiVersion: features.kaiserpfalz-edv.de/v1alpha1
 metadata:
   name: k8s-feature-library-operator
+  namespace: default
 spec:
   kind: k8s-feature-library-operator
-  group: cluster-info
+  group:
+    name: cluster-info
+    namespace: default
   version: 1.0.0-alpha1
-  provider: Kaiserpfalz EDV-Service
+  provider: Kaiserpfalz EDV-Service, Roland T. Lichti
   description: |+
     The k8s-feature-operator checks if all dependencies and conflicts are solved for a given k8s-feature-library CR.
   uri: https://www.kaiserpfalz-edv.de/k8s/k8s-installed-features-catalogue/
   depends:
-    - kind: k8s-feature-library
-      group: cluster-info
-      min-version: 1.0.0
-      max-version: 2.0.0
+    - name: k8s-feature-library
+      namespace: default
   conflicts:
-    - kind: k8s-feature-operator
-      group: cluster-info
-      min-version: 2.0.0
+    - name: cluster-info
+      namespace: default
