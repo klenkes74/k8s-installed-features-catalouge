@@ -2,6 +2,7 @@ apiVersion: features.kaiserpfalz-edv.de/v1alpha1
 kind: InstalledFeatureGroup
 metadata:
   name: cluster-info
+  namespace: default
 spec:
   provider: Kaiserpfalz EDV-Service, Roland T. Lichti
   description: |+
@@ -12,4 +13,6 @@ status:
   message: just installing
   features:
     - name: k8s-feature-library
+      namespace: default
     - name: k8s-feature-library-operator
+      namespace: default

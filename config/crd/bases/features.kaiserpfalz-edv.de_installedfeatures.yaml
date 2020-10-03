@@ -58,78 +58,34 @@ spec:
               description: Conflicts lists all features that make a cluster incompatible
                 with this feature
               items:
-                description: InstalledFeatureDependency is for listing dependent or
-                  conflicting features. They are specified by group, Kind and version.
-                  With the version being MinVersion and MaxVersion.
+                description: InstaledFeatureGroupListedFeature defines subfeatures
+                  by namespace and name
                 properties:
-                  kind:
-                    description: Feature is a reference to the feature installed
-                    properties:
-                      name:
-                        description: Name is the name of the feature listed
-                        type: string
-                      namespace:
-                        description: Namespace is the namespace of the feature listed
-                        type: string
-                    required:
-                      - name
-                    type: object
-                  max-version:
-                    description: 'MinVersion is the preferred version of the resource.  Empty
-                      implies the version of the containing resource list For subresources,
-                      this may have a different value, for example: v1 (while inside
-                      a v1beta1 version of the core resource''s group)". The MaxVersion
-                      is the first incompatible version (min and max versions are
-                      a right open interval)'
+                  name:
+                    description: Name is the name of the feature listed
                     type: string
-                  min-version:
-                    description: 'MinVersion is the preferred version of the resource.  Empty
-                      implies the version of the containing resource list For subresources,
-                      this may have a different value, for example: v1 (while inside
-                      a v1beta1 version of the core resource''s group)". The MinVersion
-                      is included.'
+                  namespace:
+                    description: Namespace is the namespace of the feature listed
                     type: string
                 required:
-                  - kind
+                  - name
                 type: object
               type: array
             depends:
               description: DependsOn lists all features this feature depends on to
                 function.
               items:
-                description: InstalledFeatureDependency is for listing dependent or
-                  conflicting features. They are specified by group, Kind and version.
-                  With the version being MinVersion and MaxVersion.
+                description: InstaledFeatureGroupListedFeature defines subfeatures
+                  by namespace and name
                 properties:
-                  kind:
-                    description: Feature is a reference to the feature installed
-                    properties:
-                      name:
-                        description: Name is the name of the feature listed
-                        type: string
-                      namespace:
-                        description: Namespace is the namespace of the feature listed
-                        type: string
-                    required:
-                      - name
-                    type: object
-                  max-version:
-                    description: 'MinVersion is the preferred version of the resource.  Empty
-                      implies the version of the containing resource list For subresources,
-                      this may have a different value, for example: v1 (while inside
-                      a v1beta1 version of the core resource''s group)". The MaxVersion
-                      is the first incompatible version (min and max versions are
-                      a right open interval)'
+                  name:
+                    description: Name is the name of the feature listed
                     type: string
-                  min-version:
-                    description: 'MinVersion is the preferred version of the resource.  Empty
-                      implies the version of the containing resource list For subresources,
-                      this may have a different value, for example: v1 (while inside
-                      a v1beta1 version of the core resource''s group)". The MinVersion
-                      is included.'
+                  namespace:
+                    description: Namespace is the namespace of the feature listed
                     type: string
                 required:
-                  - kind
+                  - name
                 type: object
               type: array
             description:
@@ -175,39 +131,17 @@ spec:
             conflicting-features:
               description: ConflictingFeatures contains the conflicting feature.
               items:
-                description: InstalledFeatureDependency is for listing dependent or
-                  conflicting features. They are specified by group, Kind and version.
-                  With the version being MinVersion and MaxVersion.
+                description: InstaledFeatureGroupListedFeature defines subfeatures
+                  by namespace and name
                 properties:
-                  kind:
-                    description: Feature is a reference to the feature installed
-                    properties:
-                      name:
-                        description: Name is the name of the feature listed
-                        type: string
-                      namespace:
-                        description: Namespace is the namespace of the feature listed
-                        type: string
-                    required:
-                      - name
-                    type: object
-                  max-version:
-                    description: 'MinVersion is the preferred version of the resource.  Empty
-                      implies the version of the containing resource list For subresources,
-                      this may have a different value, for example: v1 (while inside
-                      a v1beta1 version of the core resource''s group)". The MaxVersion
-                      is the first incompatible version (min and max versions are
-                      a right open interval)'
+                  name:
+                    description: Name is the name of the feature listed
                     type: string
-                  min-version:
-                    description: 'MinVersion is the preferred version of the resource.  Empty
-                      implies the version of the containing resource list For subresources,
-                      this may have a different value, for example: v1 (while inside
-                      a v1beta1 version of the core resource''s group)". The MinVersion
-                      is included.'
+                  namespace:
+                    description: Namespace is the namespace of the feature listed
                     type: string
                 required:
-                  - kind
+                  - name
                 type: object
               type: array
             depending-features:
@@ -233,39 +167,17 @@ spec:
             missing-dependencies:
               description: MissingDependencies contains  or the missing-dependency.
               items:
-                description: InstalledFeatureDependency is for listing dependent or
-                  conflicting features. They are specified by group, Kind and version.
-                  With the version being MinVersion and MaxVersion.
+                description: InstaledFeatureGroupListedFeature defines subfeatures
+                  by namespace and name
                 properties:
-                  kind:
-                    description: Feature is a reference to the feature installed
-                    properties:
-                      name:
-                        description: Name is the name of the feature listed
-                        type: string
-                      namespace:
-                        description: Namespace is the namespace of the feature listed
-                        type: string
-                    required:
-                      - name
-                    type: object
-                  max-version:
-                    description: 'MinVersion is the preferred version of the resource.  Empty
-                      implies the version of the containing resource list For subresources,
-                      this may have a different value, for example: v1 (while inside
-                      a v1beta1 version of the core resource''s group)". The MaxVersion
-                      is the first incompatible version (min and max versions are
-                      a right open interval)'
+                  name:
+                    description: Name is the name of the feature listed
                     type: string
-                  min-version:
-                    description: 'MinVersion is the preferred version of the resource.  Empty
-                      implies the version of the containing resource list For subresources,
-                      this may have a different value, for example: v1 (while inside
-                      a v1beta1 version of the core resource''s group)". The MinVersion
-                      is included.'
+                  namespace:
+                    description: Namespace is the namespace of the feature listed
                     type: string
                 required:
-                  - kind
+                  - name
                 type: object
               type: array
             phase:
