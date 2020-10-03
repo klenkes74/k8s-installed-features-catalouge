@@ -55,24 +55,9 @@ type InstalledFeatureSpec struct {
 	// URI with further information for users of this feature
 	Uri string `json:"uri,omitempty"`
 	// DependsOn lists all features this feature depends on to function.
-	DependsOn []InstalledFeatureDependency `json:"depends,omitempty"`
+	DependsOn []InstalledFeatureRef `json:"depends,omitempty"`
 	// Conflicts lists all features that make a cluster incompatible with this feature
-	Conflicts []InstalledFeatureDependency `json:"conflicts,omitempty"`
-}
-
-// InstalledFeatureDependency is for listing dependent or conflicting features. They are specified by group, Kind and
-// version. With the version being MinVersion and MaxVersion.
-type InstalledFeatureDependency struct {
-	// Feature is a reference to the feature installed
-	Feature InstalledFeatureRef `json:"kind"`
-	// MinVersion is the preferred version of the resource.  Empty implies the version of the containing resource list
-	// For subresources, this may have a different value, for example: v1 (while inside a v1beta1 version of the core resource's group)".
-	// The MinVersion is included.
-	MinVersion string `json:"min-version,omitempty" protobuf:"bytes,9,opt,name=version"`
-	// MinVersion is the preferred version of the resource.  Empty implies the version of the containing resource list
-	// For subresources, this may have a different value, for example: v1 (while inside a v1beta1 version of the core resource's group)".
-	// The MaxVersion is the first incompatible version (min and max versions are a right open interval)
-	MaxVersion string `json:"max-version,omitempty" protobuf:"bytes,9,opt,name=version"`
+	Conflicts []InstalledFeatureRef `json:"conflicts,omitempty"`
 }
 
 // InstalledFeatureStatus defines the observed state of InstalledFeature
@@ -83,9 +68,9 @@ type InstalledFeatureStatus struct {
 	// Message is a human readable message for this state.
 	Message string `json:"message,omitempty"`
 	// MissingDependencies contains  or the missing-dependency.
-	MissingDependencies []InstalledFeatureDependency `json:"missing-dependencies,omitempty"`
+	MissingDependencies []InstalledFeatureRef `json:"missing-dependencies,omitempty"`
 	// ConflictingFeatures contains the conflicting feature.
-	ConflictingFeatures []InstalledFeatureDependency `json:"conflicting-features,omitempty"`
+	ConflictingFeatures []InstalledFeatureRef `json:"conflicting-features,omitempty"`
 	// DependingFeatures contains all features, that depend on this feature
 	DependingFeatures []InstalledFeatureRef `json:"depending-features,omitempty"`
 }

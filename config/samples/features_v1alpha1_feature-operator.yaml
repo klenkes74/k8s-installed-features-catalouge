@@ -15,14 +15,8 @@ spec:
     The k8s-feature-operator checks if all dependencies and conflicts are solved for a given k8s-feature-library CR.
   uri: https://www.kaiserpfalz-edv.de/k8s/k8s-installed-features-catalogue/
   depends:
-    - kind:
-        name: k8s-feature-library
-        namespace: default
-      min-version: 1.0.0
-      max-version: 2.0.0
+    - name: k8s-feature-library
+      namespace: default
   conflicts:
-    - kind: k8s-feature-operator
-      group:
-        name: cluster-info
-        namespace: default
-      min-version: 2.0.0
+    - name: cluster-info
+      namespace: default
