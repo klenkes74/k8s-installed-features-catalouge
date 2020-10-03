@@ -82,7 +82,7 @@ func main() {
 		Log:    ctrl.Log.WithName("controllers").WithName("InstalledFeature"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "InstalledFeature")
+		setupLog.Error(err, "unable to create controller", "controller", "InstalledFeatures")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

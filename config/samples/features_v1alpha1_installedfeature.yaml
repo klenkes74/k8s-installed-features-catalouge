@@ -1,5 +1,4 @@
----
-kind: InstalledFeatures
+kind: InstalledFeature
 apiVersion: features.kaiserpfalz-edv.de/v1alpha1
 metadata:
   name: k8s-feature-library
@@ -13,4 +12,4 @@ spec:
   provider: Kaiserpfalz EDV-Service, Roland T. Lichti
   description: |+
     The catalogue definition to hold all feature information of a cluster.
-  uri: https://github.com/klenkes74/k8s-installed-features-catalogue/
+  url: https://github.com/klenkes74/k8s-installed-features-catalogue/

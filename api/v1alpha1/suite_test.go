@@ -48,7 +48,7 @@ func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
 	RunSpecsWithDefaultAndCustomReporters(t,
-		"Controller Suite",
+		"API Suite",
 		[]Reporter{printer.NewlineReporter{}})
 }
 
@@ -82,7 +82,7 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).ToNot(HaveOccurred())
 	err = (&installedfeaturegroup.Reconciler{
 		Client: controllers.OcpClientProd{Client: k8sManager.GetClient()},
-		Log:    ctrl.Log.WithName("controllers").WithName("InstalledFeaturegroup"),
+		Log:    ctrl.Log.WithName("controllers").WithName("InstalledFeatureGroup"),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

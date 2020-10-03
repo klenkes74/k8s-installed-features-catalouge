@@ -113,7 +113,7 @@ func stringFormatInstalledFeatureRef(category string, refs []InstalledFeatureRef
 
 // +kubebuilder:object:root=true
 
-// InstalledFeatureList contains a list of InstalledFeature
+// InstalledFeaturesList contains a list of InstalledFeatures
 type InstalledFeatureList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
