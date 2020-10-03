@@ -82,11 +82,6 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return errorRequeue, err
 	}
 
-	changed, err = r.handleDependent(ctx, instance, reqLogger, changed)
-	if err != nil {
-		return ctrl.Result{RequeueAfter: 60}, err
-	}
-
 	changed, err = r.handleGroupEntry(ctx, instance, reqLogger, changed)
 	if err != nil {
 		return errorRequeue, err
@@ -98,11 +93,19 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 }
 
 func (r *Reconciler) markDependencyAsMissing(instance *featuresv1alpha1.InstalledFeature, dependency featuresv1alpha1.InstalledFeatureRef, reqLogger logr.Logger) {
-	reqLogger.Info("mark the missing feature", "feature", dependency)
-
 	if instance.Status.MissingDependencies == nil {
 		instance.Status.MissingDependencies = make([]featuresv1alpha1.InstalledFeatureRef, 0)
 	}
+
+	for _, dep := range instance.Status.MissingDependencies {
+		reqLogger.Info("missing feature already listed", "feature", dependency)
+
+		if dep.Namespace == dependency.Namespace && dep.Name == dependency.Name {
+			return
+		}
+	}
+
+	reqLogger.Info("mark the missing feature", "feature", dependency)
 
 	instance.Status.MissingDependencies = append(instance.Status.MissingDependencies, dependency)
 }
