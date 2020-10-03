@@ -93,8 +93,22 @@ type InstalledFeature struct {
 }
 
 func (ift InstalledFeature) String() string {
-	return fmt.Sprintf("%s%c%s", ift.Namespace, Separator, ift.Name)
+	dependencies := stringFormatInstalledFeatureRef("depending", ift.Spec.DependsOn) +
+		stringFormatInstalledFeatureRef("missing", ift.Status.MissingDependencies) +
+		stringFormatInstalledFeatureRef("dependent", ift.Status.DependingFeatures)
 
+	return fmt.Sprintf(
+		"(%s%c%s%s)",
+		ift.Namespace, Separator, ift.Name, dependencies,
+	)
+}
+
+func stringFormatInstalledFeatureRef(category string, refs []InstalledFeatureRef) string {
+	if len(refs) > 0 {
+		return fmt.Sprintf(", %s%v", category, refs)
+	} else {
+		return ""
+	}
 }
 
 // +kubebuilder:object:root=true

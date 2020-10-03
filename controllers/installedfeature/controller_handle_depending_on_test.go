@@ -288,4 +288,65 @@ var _ = Describe("InstalledFeature depending feature handling", func() {
 			Expect(err).Should(HaveOccurred())
 		})
 	})
+
+	Context("Handling technical failures", func() {
+		It("Should requeue the request when patching the dependency fails", func() {
+			ift := createIFT(name, namespace, version, provider, description, uri, true, false)
+
+			ift.Spec.DependsOn = []InstalledFeatureRef{
+				{Namespace: namespace, Name: otherName},
+			}
+			By("Loading and saving the feature", func() {
+				client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+				client.EXPECT().GetInstalledFeaturePatchBase(ift).Return(k8sclient.MergeFrom(ift))
+			})
+
+			other := createIFT(otherName, namespace, version, provider, description, uri, true, false)
+			other.Status.DependingFeatures = []InstalledFeatureRef{
+				{Namespace: "other", Name: "other"},
+			}
+			By("Updating the dependent list in the status of the dependency", func() {
+				client.EXPECT().LoadInstalledFeature(gomock.Any(), otherLookupKey).Return(other, nil)
+
+				client.EXPECT().GetInstalledFeaturePatchBase(other).Return(k8sclient.MergeFrom(other))
+				client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), other, k8sclient.MergeFrom(other)).Return(errors.New("patching the dependeny failed"))
+			})
+
+			result, err := sut.Reconcile(iftReconcileRequest)
+
+			Expect(result).Should(Equal(errorResult))
+			Expect(err).Should(HaveOccurred())
+		})
+
+		It("Should requeue the request when patching the feature fails", func() {
+			ift := createIFT(name, namespace, version, provider, description, uri, true, false)
+
+			ift.Spec.DependsOn = []InstalledFeatureRef{
+				{Namespace: namespace, Name: otherName},
+			}
+			By("Loading and saving the feature", func() {
+				client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+				client.EXPECT().GetInstalledFeaturePatchBase(ift).Return(k8sclient.MergeFrom(ift))
+				client.EXPECT().PatchInstalledFeatureStatus(ctx, ift, k8sclient.MergeFrom(ift)).Return(errors.New("patching the feature failed"))
+			})
+
+			other := createIFT(otherName, namespace, version, provider, description, uri, true, false)
+			other.Status.DependingFeatures = []InstalledFeatureRef{
+				{Namespace: "other", Name: "other"},
+			}
+			By("Updating the dependent list in the status of the dependency", func() {
+				client.EXPECT().LoadInstalledFeature(gomock.Any(), otherLookupKey).Return(other, nil)
+
+				client.EXPECT().GetInstalledFeaturePatchBase(other).Return(k8sclient.MergeFrom(other))
+				client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), other, k8sclient.MergeFrom(other)).Return(nil)
+			})
+
+			result, err := sut.Reconcile(iftReconcileRequest)
+
+			Expect(result).Should(Equal(errorResult))
+			Expect(err).Should(HaveOccurred())
+		})
+	})
 })

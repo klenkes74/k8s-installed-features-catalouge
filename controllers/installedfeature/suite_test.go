@@ -201,7 +201,42 @@ func copyIFT(orig *InstalledFeature) *InstalledFeature {
 		}
 	}
 
+	if len(orig.Spec.DependsOn) > 0 {
+		result.Spec.DependsOn = make([]InstalledFeatureRef, len(orig.Spec.DependsOn))
+		for i, r := range orig.Spec.DependsOn {
+			result.Spec.DependsOn[i] = createFeatureRef(r)
+		}
+	}
+
+	if len(orig.Status.DependingFeatures) > 0 {
+		result.Status.DependingFeatures = make([]InstalledFeatureRef, len(orig.Status.DependingFeatures))
+		for i, r := range orig.Status.DependingFeatures {
+			result.Status.DependingFeatures[i] = createFeatureRef(r)
+		}
+	}
+
+	if len(orig.Status.MissingDependencies) > 0 {
+		result.Status.MissingDependencies = make([]InstalledFeatureRef, len(orig.Status.MissingDependencies))
+		for i, r := range orig.Status.MissingDependencies {
+			result.Status.MissingDependencies[i] = createFeatureRef(r)
+		}
+	}
+
+	if len(orig.Status.ConflictingFeatures) > 0 {
+		result.Status.ConflictingFeatures = make([]InstalledFeatureRef, len(orig.Status.ConflictingFeatures))
+		for i, r := range orig.Status.ConflictingFeatures {
+			result.Status.ConflictingFeatures[i] = createFeatureRef(r)
+		}
+	}
+
 	return result
+}
+
+func createFeatureRef(orig InstalledFeatureRef) InstalledFeatureRef {
+	return InstalledFeatureRef{
+		Namespace: orig.Namespace,
+		Name:      orig.Name,
+	}
 }
 
 func setGroupToIFT(instance *InstalledFeature, name string, namespace string) *InstalledFeature {

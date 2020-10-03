@@ -41,10 +41,6 @@ func (r *Reconciler) handleUpdate(ctx context.Context, instance *featuresv1alpha
 		instance.Status.Phase = "pending"
 		instance.Status.Message = "dependencies are missing"
 		statusChanged = true
-	} else if len(instance.Status.ConflictingFeatures) > 0 {
-		instance.Status.Phase = "pending"
-		instance.Status.Message = "there are conflicting features"
-		statusChanged = true
 	} else if instance.Status.Phase != "provisioned" {
 		instance.Status.Phase = "provisioned"
 		instance.Status.Message = ""

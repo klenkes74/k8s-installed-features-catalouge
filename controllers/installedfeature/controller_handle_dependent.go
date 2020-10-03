@@ -47,6 +47,10 @@ func (r *Reconciler) handleDependent(ctx context.Context, instance *featuresv1al
 			continue
 		}
 
+		if ift.DeletionTimestamp != nil {
+			continue
+		}
+
 		iftStatus := r.Client.GetInstalledFeaturePatchBase(ift)
 		if instance.DeletionTimestamp == nil {
 			for _, dep := range ift.Status.MissingDependencies {
