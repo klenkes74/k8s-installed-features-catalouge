@@ -24,11 +24,17 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func (r *Reconciler) handleUpdate(ctx context.Context, instance *featuresv1alpha1.InstalledFeature, reqLogger logr.Logger, changed bool) (ctrl.Result, error) {
+func (r *Reconciler) handleUpdate(ctx context.Context, instance *featuresv1alpha1.InstalledFeature, eventReason string, reqLogger logr.Logger, changed bool) (ctrl.Result, error) {
 	if changed {
 		err := r.Client.SaveInstalledFeature(ctx, instance)
 		if err != nil {
 			reqLogger.Error(err, "could not rewrite the installedfeature")
+			r.Client.WarnEvent(instance, eventReason,
+				"Could not save the feature %s/%s: %s",
+				instance.GetNamespace(),
+				instance.GetName(),
+				err.Error(),
+			)
 
 			return errorRequeue, err
 		}
@@ -52,9 +58,17 @@ func (r *Reconciler) handleUpdate(ctx context.Context, instance *featuresv1alpha
 		if err != nil {
 			reqLogger.Error(err, "could not set the status to the installedfeature")
 
+			r.Client.WarnEvent(instance, eventReason,
+				"Could not save the status of feature %s/%s: %s",
+				instance.GetNamespace(),
+				instance.GetName(),
+				err.Error(),
+			)
+
 			return errorRequeue, err
 		}
 	}
 
+	r.Client.InfoEvent(instance, eventReason, "Changed feature %s/%s", instance.GetNamespace(), instance.GetName())
 	return ctrl.Result{}, nil
 }

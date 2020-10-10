@@ -21,11 +21,16 @@ package controllers
 import (
 	"context"
 	"github.com/klenkes74/k8s-installed-features-catalogue/api/v1alpha1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type OcpClient interface {
+	// LoadInstalledFeature loads the feature defined by the parameter lookup.
+	// ctx The context to be used for this resource load
+	// lookup The namespaced name for the resource to loead.
 	LoadInstalledFeature(ctx context.Context, lookup types.NamespacedName) (*v1alpha1.InstalledFeature, error)
 	SaveInstalledFeature(ctx context.Context, instance *v1alpha1.InstalledFeature) error
 	GetInstalledFeaturePatchBase(instance *v1alpha1.InstalledFeature) client.Patch
@@ -35,12 +40,35 @@ type OcpClient interface {
 	SaveInstalledFeatureGroup(ctx context.Context, instance *v1alpha1.InstalledFeatureGroup) error
 	GetInstalledFeatureGroupPatchBase(instance *v1alpha1.InstalledFeatureGroup) client.Patch
 	PatchInstalledFeatureGroupStatus(ctx context.Context, instance *v1alpha1.InstalledFeatureGroup, patch client.Patch) error
+
+	// InfoEvent sends an informative event for the given instance with a note what happened.
+	// instance is the instance the event is generated for.
+	// reason is the UpperCamelCase unique reason of this event <Create|Update|Delete>
+	// note is the human readable note which will be used as fmt string for the optional list of spaces.
+	// args are the variables that are inserted into the note
+	InfoEvent(instance runtime.Object, reason, note string, args ...interface{})
+
+	// WarnEvent sends a warning for the given instance with a note what happened.
+	// instance is the instance the event is generated for.
+	// reason is the UpperCamelCase unique reason of this event <Create|Update|Delete>
+	// note is the human readable note which will be used as fmt string for the optional list of spaces.
+	// args are the variables that are inserted into the note
+	WarnEvent(instance runtime.Object, reason, note string, args ...interface{})
 }
 
 var _ OcpClient = &OcpClientProd{}
 
 type OcpClientProd struct {
-	Client client.Client
+	Client   client.Client
+	Recorder record.EventRecorder
+}
+
+func (o OcpClientProd) InfoEvent(instance runtime.Object, reason, note string, args ...interface{}) {
+	o.Recorder.Eventf(instance, "Normal", reason, note, args...)
+}
+
+func (o OcpClientProd) WarnEvent(instance runtime.Object, reason, note string, args ...interface{}) {
+	o.Recorder.Eventf(instance, "Warning", reason, note, args...)
 }
 
 func (o OcpClientProd) LoadInstalledFeature(ctx context.Context, lookup types.NamespacedName) (*v1alpha1.InstalledFeature, error) {

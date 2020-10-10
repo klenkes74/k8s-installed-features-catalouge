@@ -29,7 +29,11 @@ import (
 )
 
 const (
-	FinalizerName = "features.kaiserpfalz-edv.de/installedfeature-controller"
+	// ControllerName is the name of the controller used internally
+	ControllerName = "installedfeaturegroup-controller"
+
+	// FinalizerName is the name added to the finalizer of the managed objects.
+	FinalizerName = "features.kaiserpfalz-edv.de/" + ControllerName
 )
 
 // Reconciler reconciles a InstalledFeatureGroup object
