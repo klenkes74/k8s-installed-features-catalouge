@@ -24,15 +24,34 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"time"
 )
 
 const (
+	// ControllerName is the name of the controller used internally
+	ControllerName = "installedfeature-controller"
+
 	// FinalizerName is the name added to the finalizer of the managed objects.
-	FinalizerName = "features.kaiserpfalz-edv.de/installedfeature-controller"
+	FinalizerName = "features.kaiserpfalz-edv.de/" + ControllerName
 
 	// RequeueTime is the default requeuing time when the operator is running in problems
 	RequeueTime = 60 * time.Second
+
+	// NoteChangedFeature is the event text for a successful update/creation/deletion
+	NoteChangedFeature = "Changed feature %s/%s"
+	// NoteUpdatingDepenciesFailed is the event text when dependencies could not be linked to this feature
+	NoteUpdatingDependenciesFailed = "Could not update the dependencies of %s"
+	// NoteUpdatingDependentFeaturesFailed is the event text when updating all dependent features failed
+	NoteUpdatingDependentFeaturesFailed = "Could not handle the dependent features of %s"
+	// NoteUpdatingGroupFailed is the event text when updating the group relation failed
+	NoteUpdatingGroupFailed = "Could not handle the group relation of %s"
+	// NoteMissingDependencies is the event text listing the missing dependencies
+	NoteMissingDependencies = "Feature has missing dependencies: %v"
+	// NoteStatusUpdateFailed is the event text when the status could not be updated
+	NoteStatusUpdateFailed = "Could not save the status of feature %s/%s: %s"
+	// NoteFeatureSaveFailed is the event text when saving a feature is failing
+	NoteFeatureSaveFailed = "Could not save the feature %s/%s: %s"
 )
 
 // The default requeue for error handling
@@ -49,6 +68,7 @@ type Reconciler struct {
 // +kubebuilder:rbac:groups=features.kaiserpfalz-edv.de,resources=installedfeatures,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=features.kaiserpfalz-edv.de,resources=installedfeatures/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=features.kaiserpfalz-edv.de,resources=installedfeaturegroups/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
@@ -69,27 +89,45 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{}, err
 		}
 
+		reqLogger.Error(err, "Could not load installed feature")
+
 		return errorRequeue, err
 	}
 
-	changed, err = r.handleDependingOn(ctx, instance, reqLogger, changed)
+	eventReason := r.calculateEventReason(instance)
+
+	changed, err = r.handleDependingOn(ctx, instance, eventReason, reqLogger, changed)
 	if err != nil {
+		r.Client.WarnEvent(instance, eventReason, NoteUpdatingDependenciesFailed, req.NamespacedName)
 		return errorRequeue, err
 	}
 
 	changed, err = r.handleDependent(ctx, instance, reqLogger, changed)
 	if err != nil {
+		r.Client.WarnEvent(instance, eventReason, NoteUpdatingDependentFeaturesFailed, req.NamespacedName)
 		return errorRequeue, err
 	}
 
 	changed, err = r.handleGroupEntry(ctx, instance, reqLogger, changed)
 	if err != nil {
+		r.Client.WarnEvent(instance, eventReason, NoteUpdatingGroupFailed, req.NamespacedName)
+
 		return errorRequeue, err
 	}
 
 	changed = r.handleFinalizer(ctx, instance, reqLogger, changed)
 
-	return r.handleUpdate(ctx, instance, reqLogger, changed)
+	return r.handleUpdate(ctx, instance, eventReason, reqLogger, changed)
+}
+
+func (r *Reconciler) calculateEventReason(instance *featuresv1alpha1.InstalledFeature) string {
+	if instance.DeletionTimestamp != nil {
+		return "Delete"
+	} else if !controllerutil.ContainsFinalizer(instance, FinalizerName) {
+		return "Create"
+	}
+
+	return "Update"
 }
 
 func (r *Reconciler) markDependencyAsMissing(instance *featuresv1alpha1.InstalledFeature, dependency featuresv1alpha1.InstalledFeatureRef, reqLogger logr.Logger) {

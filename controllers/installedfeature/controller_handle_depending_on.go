@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (r *Reconciler) handleDependingOn(ctx context.Context, instance *featuresv1alpha1.InstalledFeature, reqLogger logr.Logger, changed bool) (bool, error) {
+func (r *Reconciler) handleDependingOn(ctx context.Context, instance *featuresv1alpha1.InstalledFeature, eventReason string, reqLogger logr.Logger, changed bool) (bool, error) {
 	if instance.Spec.DependsOn == nil || len(instance.Spec.DependsOn) == 0 {
 		return changed, nil
 	}
@@ -99,6 +99,7 @@ func (r *Reconciler) handleDependingOn(ctx context.Context, instance *featuresv1
 	}
 
 	if len(missingDependencies) > 0 {
+		r.Client.WarnEvent(instance, eventReason, NoteMissingDependencies, missingDependencies)
 		return changed, fmt.Errorf("missing dependencies: %v", missingDependencies)
 	}
 

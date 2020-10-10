@@ -20,8 +20,10 @@ import (
 	"errors"
 	"github.com/golang/mock/gomock"
 	. "github.com/klenkes74/k8s-installed-features-catalogue/api/v1alpha1"
+	"github.com/klenkes74/k8s-installed-features-catalogue/controllers/installedfeature"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/types"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -55,6 +57,8 @@ var _ = Describe("InstalledFeature depending feature handling", func() {
 				iftPatch := k8sclient.MergeFrom(other)
 				client.EXPECT().GetInstalledFeaturePatchBase(other).Return(iftPatch)
 				client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), iftPatch).Return(nil)
+
+				client.EXPECT().InfoEvent(ift, "Update", installedfeature.NoteChangedFeature, ift.GetNamespace(), ift.GetName())
 			})
 
 			result, err := sut.Reconcile(iftReconcileRequest)
@@ -90,6 +94,8 @@ var _ = Describe("InstalledFeature depending feature handling", func() {
 				iftPatch := k8sclient.MergeFrom(other)
 				client.EXPECT().GetInstalledFeaturePatchBase(other).Return(iftPatch)
 			})
+
+			client.EXPECT().InfoEvent(ift, "Update", installedfeature.NoteChangedFeature, ift.GetNamespace(), ift.GetName())
 
 			result, err := sut.Reconcile(iftReconcileRequest)
 
@@ -128,6 +134,10 @@ var _ = Describe("InstalledFeature depending feature handling", func() {
 				client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), iftPatch).Return(nil)
 			})
 
+			By("Sending events", func() {
+				client.EXPECT().InfoEvent(ift, "Delete", installedfeature.NoteChangedFeature, ift.GetNamespace(), ift.GetName())
+			})
+
 			result, err := sut.Reconcile(iftReconcileRequest)
 
 			Expect(result).Should(Equal(successResult))
@@ -155,6 +165,10 @@ var _ = Describe("InstalledFeature depending feature handling", func() {
 				iftPatch := k8sclient.MergeFrom(ift)
 				client.EXPECT().GetInstalledFeaturePatchBase(other).Return(iftPatch)
 				client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), iftPatch).Return(nil)
+			})
+
+			By("Sending events", func() {
+				client.EXPECT().InfoEvent(ift, "Update", installedfeature.NoteChangedFeature, ift.GetNamespace(), ift.GetName())
 			})
 
 			result, err := sut.Reconcile(iftReconcileRequest)
@@ -197,6 +211,14 @@ var _ = Describe("InstalledFeature depending feature handling", func() {
 				client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), iftPatch).Return(nil)
 			})
 
+			By("sending events", func() {
+				client.EXPECT().WarnEvent(ift, "Update",
+					installedfeature.NoteStatusUpdateFailed,
+					ift.GetNamespace(), ift.GetName(),
+					gomock.Any(),
+				)
+			})
+
 			result, err := sut.Reconcile(iftReconcileRequest)
 
 			Expect(result).Should(Equal(errorResult))
@@ -227,6 +249,12 @@ var _ = Describe("InstalledFeature depending feature handling", func() {
 				client.EXPECT().GetInstalledFeaturePatchBase(other).Return(iftPatch)
 			})
 
+			By("sending events", func() {
+				client.EXPECT().WarnEvent(ift, "Update",
+					installedfeature.NoteUpdatingDependenciesFailed,
+					types.NamespacedName{Namespace: ift.GetNamespace(), Name: ift.GetName()},
+				)
+			})
 			result, err := sut.Reconcile(iftReconcileRequest)
 
 			Expect(result).Should(Equal(errorResult))
@@ -258,6 +286,11 @@ var _ = Describe("InstalledFeature depending feature handling", func() {
 
 			})
 
+			By("sending events", func() {
+				client.EXPECT().WarnEvent(ift, "Update", installedfeature.NoteMissingDependencies, gomock.Any())
+				client.EXPECT().WarnEvent(ift, "Update", installedfeature.NoteUpdatingDependenciesFailed, gomock.Any())
+			})
+
 			result, err := sut.Reconcile(iftReconcileRequest)
 
 			Expect(result).Should(Equal(errorResult))
@@ -280,6 +313,11 @@ var _ = Describe("InstalledFeature depending feature handling", func() {
 
 			By("Updating the dependent list in the status of the dependency", func() {
 				client.EXPECT().LoadInstalledFeature(gomock.Any(), otherLookupKey).Return(nil, errors.New("other feature not found"))
+			})
+
+			By("sending events", func() {
+				client.EXPECT().WarnEvent(ift, "Update", installedfeature.NoteMissingDependencies, gomock.Any())
+				client.EXPECT().WarnEvent(ift, "Update", installedfeature.NoteUpdatingDependenciesFailed, gomock.Any())
 			})
 
 			result, err := sut.Reconcile(iftReconcileRequest)
@@ -310,7 +348,14 @@ var _ = Describe("InstalledFeature depending feature handling", func() {
 				client.EXPECT().LoadInstalledFeature(gomock.Any(), otherLookupKey).Return(other, nil)
 
 				client.EXPECT().GetInstalledFeaturePatchBase(other).Return(k8sclient.MergeFrom(other))
-				client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), other, k8sclient.MergeFrom(other)).Return(errors.New("patching the dependeny failed"))
+				client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), other, k8sclient.MergeFrom(other)).Return(errors.New("patching the dependency failed"))
+			})
+
+			By("sending events", func() {
+				client.EXPECT().WarnEvent(ift, "Update",
+					installedfeature.NoteUpdatingDependenciesFailed,
+					types.NamespacedName{Namespace: ift.GetNamespace(), Name: ift.GetName()},
+				)
 			})
 
 			result, err := sut.Reconcile(iftReconcileRequest)
@@ -341,6 +386,13 @@ var _ = Describe("InstalledFeature depending feature handling", func() {
 
 				client.EXPECT().GetInstalledFeaturePatchBase(other).Return(k8sclient.MergeFrom(other))
 				client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), other, k8sclient.MergeFrom(other)).Return(nil)
+			})
+
+			By("sending events", func() {
+				client.EXPECT().WarnEvent(ift, "Update",
+					installedfeature.NoteUpdatingDependenciesFailed,
+					types.NamespacedName{Namespace: ift.GetNamespace(), Name: ift.GetName()},
+				)
 			})
 
 			result, err := sut.Reconcile(iftReconcileRequest)

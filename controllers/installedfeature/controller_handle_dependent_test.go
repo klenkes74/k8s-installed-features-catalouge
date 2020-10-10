@@ -19,8 +19,10 @@ package installedfeature_test
 import (
 	"errors"
 	. "github.com/klenkes74/k8s-installed-features-catalogue/api/v1alpha1"
+	"github.com/klenkes74/k8s-installed-features-catalogue/controllers/installedfeature"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/types"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -49,6 +51,8 @@ var _ = Describe("InstalledFeature dependent feature handling", func() {
 			client.EXPECT().GetInstalledFeaturePatchBase(other).Return(k8sclient.MergeFrom(other))
 			client.EXPECT().PatchInstalledFeatureStatus(ctx, other, k8sclient.MergeFrom(other))
 
+			client.EXPECT().InfoEvent(other, "Update", installedfeature.NoteChangedFeature, other.GetNamespace(), other.GetName())
+
 			result, err := sut.Reconcile(otherReconcileRequest)
 
 			Expect(result).Should(Equal(successResult))
@@ -72,6 +76,8 @@ var _ = Describe("InstalledFeature dependent feature handling", func() {
 
 			client.EXPECT().GetInstalledFeaturePatchBase(other).Return(k8sclient.MergeFrom(other))
 			client.EXPECT().PatchInstalledFeatureStatus(ctx, other, k8sclient.MergeFrom(other))
+
+			client.EXPECT().InfoEvent(other, "Update", installedfeature.NoteChangedFeature, other.GetNamespace(), other.GetName())
 
 			result, err := sut.Reconcile(otherReconcileRequest)
 
@@ -104,6 +110,8 @@ var _ = Describe("InstalledFeature dependent feature handling", func() {
 
 			client.EXPECT().SaveInstalledFeature(ctx, other).Return(nil)
 
+			client.EXPECT().InfoEvent(other, "Delete", installedfeature.NoteChangedFeature, other.GetNamespace(), other.GetName())
+
 			result, err := sut.Reconcile(otherReconcileRequest)
 
 			Expect(result).Should(Equal(successResult))
@@ -126,6 +134,12 @@ var _ = Describe("InstalledFeature dependent feature handling", func() {
 
 			By("working on the depending feature", func() {
 				client.EXPECT().LoadInstalledFeature(ctx, iftLookupKey).Return(nil, errors.New("dependent feature not found"))
+			})
+
+			By("Sending events", func() {
+				client.EXPECT().WarnEvent(other, "Update",
+					installedfeature.NoteUpdatingDependentFeaturesFailed,
+					types.NamespacedName{Namespace: other.GetNamespace(), Name: other.GetName()})
 			})
 
 			result, err := sut.Reconcile(otherReconcileRequest)
@@ -153,6 +167,10 @@ var _ = Describe("InstalledFeature dependent feature handling", func() {
 				client.EXPECT().LoadInstalledFeature(ctx, iftLookupKey).Return(nil, createNotFound("InstalledFeature", name))
 			})
 
+			By("sending events", func() {
+				client.EXPECT().InfoEvent(other, "Update", installedfeature.NoteChangedFeature, other.GetNamespace(), other.GetName())
+			})
+
 			result, err := sut.Reconcile(otherReconcileRequest)
 
 			Expect(result).Should(Equal(successResult))
@@ -178,7 +196,13 @@ var _ = Describe("InstalledFeature dependent feature handling", func() {
 			client.EXPECT().LoadInstalledFeature(ctx, iftLookupKey).Return(ift, nil)
 
 			client.EXPECT().GetInstalledFeaturePatchBase(ift).Return(k8sclient.MergeFrom(ift))
-			client.EXPECT().PatchInstalledFeatureStatus(ctx, expectedIft, k8sclient.MergeFrom(ift)).Return(errors.New("patching dependent feature failed"))
+			client.EXPECT().PatchInstalledFeatureStatus(ctx, expectedIft, k8sclient.MergeFrom(ift)).
+				Return(errors.New("patching dependent feature failed"))
+
+			client.EXPECT().WarnEvent(other, "Delete",
+				installedfeature.NoteUpdatingDependentFeaturesFailed,
+				types.NamespacedName{Namespace: other.GetNamespace(), Name: other.GetName()},
+			)
 
 			result, err := sut.Reconcile(otherReconcileRequest)
 

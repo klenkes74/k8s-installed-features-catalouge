@@ -70,19 +70,25 @@ func main() {
 	}
 
 	if err = (&installedfeaturegroup.Reconciler{
-		Client: &controllers.OcpClientProd{Client: mgr.GetClient()},
-		Log:    ctrl.Log.WithName("controllers").WithName("InstalledFeatureGroup"),
+		Client: &controllers.OcpClientProd{
+			Client:   mgr.GetClient(),
+			Recorder: mgr.GetEventRecorderFor(installedfeaturegroup.ControllerName),
+		},
+		Log:    ctrl.Log.WithName(installedfeaturegroup.ControllerName),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "InstalledFeatureGroup")
+		setupLog.Error(err, "unable to create controller", "controller", installedfeaturegroup.ControllerName)
 		os.Exit(1)
 	}
 	if err = (&installedfeature.Reconciler{
-		Client: &controllers.OcpClientProd{Client: mgr.GetClient()},
-		Log:    ctrl.Log.WithName("controllers").WithName("InstalledFeature"),
+		Client: &controllers.OcpClientProd{
+			Client:   mgr.GetClient(),
+			Recorder: mgr.GetEventRecorderFor(installedfeaturegroup.ControllerName),
+		},
+		Log:    ctrl.Log.WithName(installedfeature.ControllerName),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "InstalledFeatures")
+		setupLog.Error(err, "unable to create controller", "controller", installedfeature.ControllerName)
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
