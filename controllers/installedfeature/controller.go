@@ -37,6 +37,21 @@ const (
 
 	// RequeueTime is the default requeuing time when the operator is running in problems
 	RequeueTime = 60 * time.Second
+
+	// NoteChangedFeature is the event text for a successful update/creation/deletion
+	NoteChangedFeature = "Changed feature %s/%s"
+	// NoteUpdatingDepenciesFailed is the event text when dependencies could not be linked to this feature
+	NoteUpdatingDependenciesFailed = "Could not update the dependencies of %s"
+	// NoteUpdatingDependentFeaturesFailed is the event text when updating all dependent features failed
+	NoteUpdatingDependentFeaturesFailed = "Could not handle the dependent features of %s"
+	// NoteUpdatingGroupFailed is the event text when updating the group relation failed
+	NoteUpdatingGroupFailed = "Could not handle the group relation of %s"
+	// NoteMissingDependencies is the event text listing the missing dependencies
+	NoteMissingDependencies = "Feature has missing dependencies: %v"
+	// NoteStatusUpdateFailed is the event text when the status could not be updated
+	NoteStatusUpdateFailed = "Could not save the status of feature %s/%s: %s"
+	// NoteFeatureSaveFailed is the event text when saving a feature is failing
+	NoteFeatureSaveFailed = "Could not save the feature %s/%s: %s"
 )
 
 // The default requeue for error handling
@@ -74,28 +89,28 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return ctrl.Result{}, err
 		}
 
-		reqLogger.Error(err, "Could not load installed feature: %s", req.NamespacedName)
+		reqLogger.Error(err, "Could not load installed feature")
 
 		return errorRequeue, err
 	}
 
 	eventReason := r.calculateEventReason(instance)
 
-	changed, err = r.handleDependingOn(ctx, instance, reqLogger, changed)
+	changed, err = r.handleDependingOn(ctx, instance, eventReason, reqLogger, changed)
 	if err != nil {
-		r.Client.WarnEvent(instance, eventReason, "Could not update the dependencies of %s", req.NamespacedName)
+		r.Client.WarnEvent(instance, eventReason, NoteUpdatingDependenciesFailed, req.NamespacedName)
 		return errorRequeue, err
 	}
 
 	changed, err = r.handleDependent(ctx, instance, reqLogger, changed)
 	if err != nil {
-		r.Client.WarnEvent(instance, eventReason, "Could not handle the dependent features of %s", req.NamespacedName)
+		r.Client.WarnEvent(instance, eventReason, NoteUpdatingDependentFeaturesFailed, req.NamespacedName)
 		return errorRequeue, err
 	}
 
 	changed, err = r.handleGroupEntry(ctx, instance, reqLogger, changed)
 	if err != nil {
-		r.Client.WarnEvent(instance, eventReason, "Could not handle the group relation of %s", req.Name)
+		r.Client.WarnEvent(instance, eventReason, NoteUpdatingGroupFailed, req.NamespacedName)
 
 		return errorRequeue, err
 	}

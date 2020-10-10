@@ -9,26 +9,26 @@ metadata:
   name: installedfeaturegroups.features.kaiserpfalz-edv.de
 spec:
   additionalPrinterColumns:
-    - JSONPath: .metadata.name
-      name: Group
-      type: string
-    - JSONPath: .metadata.creationTimestamp
-      name: Age
-      type: date
-    - JSONPath: .spec.uri
-      name: Documentation
-      type: string
+  - JSONPath: .metadata.name
+    name: Group
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  - JSONPath: .spec.uri
+    name: Documentation
+    type: string
   group: features.kaiserpfalz-edv.de
   names:
     kind: InstalledFeatureGroup
     listKind: InstalledFeatureGroupList
     plural: installedfeaturegroups
     shortNames:
-      - iftg
+    - iftg
     singular: installedfeaturegroup
   scope: Namespaced
   subresources:
-    status: { }
+    status: {}
   validation:
     openAPIV3Schema:
       description: InstalledFeatureGroup is the Schema for the installedfeaturegroups
@@ -75,7 +75,7 @@ spec:
                     description: Namespace is the namespace of the feature listed
                     type: string
                 required:
-                  - name
+                - name
                 type: object
               type: array
             message:
@@ -85,23 +85,23 @@ spec:
               description: Phase is the state of this message. May be pending, initializing,
                 failed, provisioned
               enum:
-                - pending
-                - initializing
-                - failed
-                - provisioned
+              - pending
+              - initializing
+              - failed
+              - provisioned
               type: string
           required:
-            - phase
+          - phase
           type: object
       type: object
   version: v1alpha1
   versions:
-    - name: v1alpha1
-      served: true
-      storage: true
+  - name: v1alpha1
+    served: true
+    storage: true
 status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: [ ]
-  storedVersions: [ ]
+  conditions: []
+  storedVersions: []

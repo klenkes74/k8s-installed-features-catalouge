@@ -75,6 +75,7 @@ var _ = Describe("InstalledFeature controller basics", func() {
 			expected.Finalizers[0] = FinalizerName
 
 			client.EXPECT().SaveInstalledFeature(gomock.Any(), expected).Return(nil)
+			client.EXPECT().InfoEvent(ift, "Create", NoteChangedFeature, ift.GetNamespace(), ift.GetName())
 
 			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
 			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
@@ -98,6 +99,8 @@ var _ = Describe("InstalledFeature controller basics", func() {
 			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
 			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
+			client.EXPECT().InfoEvent(ift, "Delete", NoteChangedFeature, ift.GetNamespace(), ift.GetName())
+
 			result, err := sut.Reconcile(iftReconcileRequest)
 			Expect(result).Should(Equal(successResult))
 			Expect(err).ToNot(HaveOccurred())
@@ -113,6 +116,8 @@ var _ = Describe("InstalledFeature controller basics", func() {
 
 			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
 			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			client.EXPECT().InfoEvent(ift, "Update", NoteChangedFeature, ift.GetNamespace(), ift.GetName())
 
 			result, err := sut.Reconcile(iftReconcileRequest)
 
@@ -155,6 +160,14 @@ var _ = Describe("InstalledFeature controller basics", func() {
 
 			client.EXPECT().SaveInstalledFeature(gomock.Any(), expected).Return(errors.New("some error"))
 
+			By("sending events", func() {
+				client.EXPECT().WarnEvent(ift, "Create",
+					NoteFeatureSaveFailed,
+					ift.GetNamespace(), ift.GetName(),
+					gomock.Any(),
+				)
+			})
+
 			result, err := sut.Reconcile(iftReconcileRequest)
 			Expect(result).Should(Equal(errorResult))
 			Expect(err).To(HaveOccurred())
@@ -175,6 +188,10 @@ var _ = Describe("InstalledFeature controller basics", func() {
 
 			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(expected))
 			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("patching status failed"))
+
+			By("Sending events", func() {
+				client.EXPECT().WarnEvent(ift, "Create", NoteStatusUpdateFailed, ift.GetNamespace(), ift.GetName(), gomock.Any())
+			})
 
 			result, err := sut.Reconcile(iftReconcileRequest)
 

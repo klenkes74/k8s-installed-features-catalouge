@@ -30,7 +30,7 @@ func (r *Reconciler) handleUpdate(ctx context.Context, instance *featuresv1alpha
 		if err != nil {
 			reqLogger.Error(err, "could not rewrite the installedfeature")
 			r.Client.WarnEvent(instance, eventReason,
-				"Could not save the feature %s/%s: %s",
+				NoteFeatureSaveFailed,
 				instance.GetNamespace(),
 				instance.GetName(),
 				err.Error(),
@@ -59,7 +59,7 @@ func (r *Reconciler) handleUpdate(ctx context.Context, instance *featuresv1alpha
 			reqLogger.Error(err, "could not set the status to the installedfeature")
 
 			r.Client.WarnEvent(instance, eventReason,
-				"Could not save the status of feature %s/%s: %s",
+				NoteStatusUpdateFailed,
 				instance.GetNamespace(),
 				instance.GetName(),
 				err.Error(),
@@ -69,6 +69,6 @@ func (r *Reconciler) handleUpdate(ctx context.Context, instance *featuresv1alpha
 		}
 	}
 
-	r.Client.InfoEvent(instance, eventReason, "Changed feature %s/%s", instance.GetNamespace(), instance.GetName())
+	r.Client.InfoEvent(instance, eventReason, NoteChangedFeature, instance.GetNamespace(), instance.GetName())
 	return ctrl.Result{}, nil
 }

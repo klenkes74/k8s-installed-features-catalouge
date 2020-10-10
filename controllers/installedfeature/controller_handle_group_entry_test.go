@@ -20,8 +20,10 @@ import (
 	"errors"
 	"github.com/golang/mock/gomock"
 	. "github.com/klenkes74/k8s-installed-features-catalogue/api/v1alpha1"
+	"github.com/klenkes74/k8s-installed-features-catalogue/controllers/installedfeature"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"k8s.io/apimachinery/pkg/types"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	// +kubebuilder:scaffold:imports
 )
@@ -41,6 +43,8 @@ var _ = Describe("InstalledFeature controller handling featuregroups", func() {
 
 			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
 			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			client.EXPECT().InfoEvent(ift, "Update", "Changed feature %s/%s", ift.GetNamespace(), ift.GetName())
 
 			result, err := sut.Reconcile(iftReconcileRequest)
 
@@ -67,6 +71,8 @@ var _ = Describe("InstalledFeature controller handling featuregroups", func() {
 			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
 			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
+			client.EXPECT().InfoEvent(ift, "Update", installedfeature.NoteChangedFeature, ift.GetNamespace(), ift.GetName())
+
 			result, err := sut.Reconcile(iftReconcileRequest)
 
 			Expect(result).Should(Equal(successResult))
@@ -90,6 +96,8 @@ var _ = Describe("InstalledFeature controller handling featuregroups", func() {
 
 			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
 			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+			client.EXPECT().InfoEvent(ift, "Update", installedfeature.NoteChangedFeature, ift.GetNamespace(), ift.GetName())
 
 			result, err := sut.Reconcile(iftReconcileRequest)
 
@@ -116,6 +124,8 @@ var _ = Describe("InstalledFeature controller handling featuregroups", func() {
 			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
 			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
+			client.EXPECT().InfoEvent(ift, "Delete", installedfeature.NoteChangedFeature, ift.GetNamespace(), ift.GetName())
+
 			result, err := sut.Reconcile(iftReconcileRequest)
 
 			Expect(result).Should(Equal(successResult))
@@ -129,6 +139,11 @@ var _ = Describe("InstalledFeature controller handling featuregroups", func() {
 			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
 
 			client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftgLookupKey).Return(nil, errors.New("can not load IFTG"))
+
+			By("Sending events", func() {
+
+				client.EXPECT().WarnEvent(ift, "Delete", installedfeature.NoteUpdatingGroupFailed, types.NamespacedName{Namespace: ift.GetNamespace(), Name: ift.GetName()})
+			})
 
 			result, err := sut.Reconcile(iftReconcileRequest)
 

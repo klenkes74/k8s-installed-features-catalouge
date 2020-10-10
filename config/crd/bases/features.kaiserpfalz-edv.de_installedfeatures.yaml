@@ -1,3 +1,4 @@
+
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
@@ -8,32 +9,32 @@ metadata:
   name: installedfeatures.features.kaiserpfalz-edv.de
 spec:
   additionalPrinterColumns:
-    - JSONPath: .spec.group
-      name: Group
-      type: string
-    - JSONPath: .spec.version
-      name: Version
-      type: string
-    - JSONPath: .metadata.creationTimestamp
-      name: Age
-      type: date
-    - JSONPath: .spec.uri
-      name: Documentation
-      type: string
-    - JSONPath: .status.phase
-      name: State
-      type: string
+  - JSONPath: .spec.group
+    name: Group
+    type: string
+  - JSONPath: .spec.version
+    name: Version
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  - JSONPath: .spec.uri
+    name: Documentation
+    type: string
+  - JSONPath: .status.phase
+    name: State
+    type: string
   group: features.kaiserpfalz-edv.de
   names:
     kind: InstalledFeature
     listKind: InstalledFeatureList
     plural: installedfeatures
     shortNames:
-      - ift
+    - ift
     singular: installedfeature
   scope: Namespaced
   subresources:
-    status: { }
+    status: {}
   validation:
     openAPIV3Schema:
       description: InstalledFeature is the Schema for the installedfeatures API
@@ -67,7 +68,7 @@ spec:
                     description: Namespace is the namespace of the feature listed
                     type: string
                 required:
-                  - name
+                - name
                 type: object
               type: array
             depends:
@@ -84,7 +85,7 @@ spec:
                     description: Namespace is the namespace of the feature listed
                     type: string
                 required:
-                  - name
+                - name
                 type: object
               type: array
             description:
@@ -102,7 +103,7 @@ spec:
                   description: Namespace is the namespace of the feature listed
                   type: string
               required:
-                - name
+              - name
               type: object
             kind:
               description: Kind is the kind for the resource (e.g. 'Foo' is the kind
@@ -121,8 +122,8 @@ spec:
                 version of the core resource''s group)".'
               type: string
           required:
-            - kind
-            - version
+          - kind
+          - version
           type: object
         status:
           description: InstalledFeatureStatus defines the observed state of InstalledFeature
@@ -140,7 +141,7 @@ spec:
                     description: Namespace is the namespace of the feature listed
                     type: string
                 required:
-                  - name
+                - name
                 type: object
               type: array
             depending-features:
@@ -157,7 +158,7 @@ spec:
                     description: Namespace is the namespace of the feature listed
                     type: string
                 required:
-                  - name
+                - name
                 type: object
               type: array
             message:
@@ -176,30 +177,30 @@ spec:
                     description: Namespace is the namespace of the feature listed
                     type: string
                 required:
-                  - name
+                - name
                 type: object
               type: array
             phase:
               description: Phase is the state of this message. May be pending, initializing,
                 failed, provisioned
               enum:
-                - pending
-                - initializing
-                - failed
-                - provisioned
+              - pending
+              - initializing
+              - failed
+              - provisioned
               type: string
           required:
-            - phase
+          - phase
           type: object
       type: object
   version: v1alpha1
   versions:
-    - name: v1alpha1
-      served: true
-      storage: true
+  - name: v1alpha1
+    served: true
+    storage: true
 status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: [ ]
-  storedVersions: [ ]
+  conditions: []
+  storedVersions: []

@@ -76,13 +76,20 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&installedfeature.Reconciler{
-		Client: controllers.OcpClientProd{Client: k8sManager.GetClient()},
-		Log:    ctrl.Log.WithName("controllers").WithName("InstalledFeature"),
+		Client: controllers.OcpClientProd{
+			Client:   k8sManager.GetClient(),
+			Recorder: k8sManager.GetEventRecorderFor(installedfeaturegroup.ControllerName),
+		},
+		Log: ctrl.Log.WithName(installedfeaturegroup.ControllerName),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
+
 	err = (&installedfeaturegroup.Reconciler{
-		Client: controllers.OcpClientProd{Client: k8sManager.GetClient()},
-		Log:    ctrl.Log.WithName("controllers").WithName("InstalledFeatureGroup"),
+		Client: controllers.OcpClientProd{
+			Client:   k8sManager.GetClient(),
+			Recorder: k8sManager.GetEventRecorderFor(installedfeature.ControllerName),
+		},
+		Log: ctrl.Log.WithName(installedfeature.ControllerName),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
