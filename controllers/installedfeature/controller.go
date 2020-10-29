@@ -130,48 +130,68 @@ func (r *Reconciler) calculateEventReason(instance *featuresv1alpha1.InstalledFe
 	return "Update"
 }
 
-func (r *Reconciler) markDependencyAsMissing(instance *featuresv1alpha1.InstalledFeature, dependency featuresv1alpha1.InstalledFeatureRef, reqLogger logr.Logger) {
-	if instance.Status.MissingDependencies == nil {
-		instance.Status.MissingDependencies = make([]featuresv1alpha1.InstalledFeatureRef, 0)
+// addRef adds the reference and returns the new array. The second return value is true, if the array has been changed
+// and false if the array is unchanged.
+func (r *Reconciler) addRef(
+	refs []featuresv1alpha1.InstalledFeatureRef,
+	dependency featuresv1alpha1.InstalledFeatureRef,
+) ([]featuresv1alpha1.InstalledFeatureRef, bool) {
+	i := r.indexOfRef(refs, dependency)
+	if i != -1 {
+		return refs, false
 	}
 
-	for _, dep := range instance.Status.MissingDependencies {
-		reqLogger.Info("missing feature already listed", "feature", dependency)
-
-		if dep.Namespace == dependency.Namespace && dep.Name == dependency.Name {
-			return
-		}
+	if refs == nil {
+		refs = []featuresv1alpha1.InstalledFeatureRef{}
 	}
 
-	reqLogger.Info("mark the missing feature", "feature", dependency)
-
-	instance.Status.MissingDependencies = append(instance.Status.MissingDependencies, dependency)
+	return append(refs, dependency), true
 }
 
-func (r *Reconciler) removeMissingDependencyStatus(instance *featuresv1alpha1.InstalledFeature, dependency featuresv1alpha1.InstalledFeatureRef, reqLogger logr.Logger) bool {
-	i := r.indexOfMissingDependency(instance, dependency)
+// removeRef removes the reference and returns the new array. The second return value is true, if the array has been
+// changed and false if the array is unchanged.
+func (r *Reconciler) removeRef(
+	refs []featuresv1alpha1.InstalledFeatureRef,
+	dependency featuresv1alpha1.InstalledFeatureRef,
+) ([]featuresv1alpha1.InstalledFeatureRef, bool) {
+	i := r.indexOfRef(refs, dependency)
 	if i == -1 {
-		return false
+		return refs, false
 	}
 
-	reqLogger.Info("remove the marked missing feature", "feature", dependency)
+	if len(refs) > 1 {
+		refs[i] = refs[len(refs)-1]
+		refs = refs[:len(refs)-1]
+	} else {
+		refs = nil
+	}
 
-	instance.Status.MissingDependencies[i] = instance.Status.MissingDependencies[len(instance.Status.MissingDependencies)-1]
-	instance.Status.MissingDependencies = instance.Status.MissingDependencies[:len(instance.Status.MissingDependencies)-1]
-
-	return true
+	return refs, true
 }
 
-func (r *Reconciler) indexOfMissingDependency(instance *featuresv1alpha1.InstalledFeature, dependency featuresv1alpha1.InstalledFeatureRef) int {
-	if instance.Status.MissingDependencies == nil {
+// indexOfRef returns the index of the reference in the array or -1 if the array is empty, nil or the reference is not
+// listed in the array
+func (r *Reconciler) indexOfRef(
+	refs []featuresv1alpha1.InstalledFeatureRef,
+	dependency featuresv1alpha1.InstalledFeatureRef,
+) int {
+	if refs == nil {
 		return -1
 	}
 
-	for i, d := range instance.Status.MissingDependencies {
+	for i, d := range refs {
 		if d.Name == dependency.Name && d.Namespace == dependency.Namespace {
 			return i
 		}
 	}
 
 	return -1
+}
+
+// generateRef generates a reference pointing to the instance
+func (r *Reconciler) generateRef(instance *featuresv1alpha1.InstalledFeature) featuresv1alpha1.InstalledFeatureRef {
+	return featuresv1alpha1.InstalledFeatureRef{
+		Namespace: instance.Namespace,
+		Name:      instance.Name,
+	}
 }

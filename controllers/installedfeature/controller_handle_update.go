@@ -41,15 +41,20 @@ func (r *Reconciler) handleUpdate(ctx context.Context, instance *featuresv1alpha
 	}
 
 	statusChanged := false
+	// TODO 2020-10-11 klenkes74 check if we can use instance or need to use a deep copy from the start without all changes
 	status := r.Client.GetInstalledFeaturePatchBase(instance)
 
 	if len(instance.Status.MissingDependencies) > 0 {
 		instance.Status.Phase = "pending"
-		instance.Status.Message = "dependencies are missing"
+		instance.Status.Message = "One or more dependencies of the installed feature are missing"
 		statusChanged = true
-	} else if instance.Status.Phase != "provisioned" {
+	} else if eventReason == "Create" {
 		instance.Status.Phase = "provisioned"
-		instance.Status.Message = ""
+		instance.Status.Message = "Installed Feature is fully provisioned and all dependencies are met"
+		statusChanged = true
+	} else if eventReason == "Delete" {
+		instance.Status.Phase = "pending"
+		instance.Status.Message = "Installed Feature is being deleted"
 		statusChanged = true
 	}
 

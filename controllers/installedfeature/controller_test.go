@@ -33,7 +33,6 @@ import (
 )
 
 const (
-	group       = "basic-library"
 	name        = "basic-feature"
 	otherName   = "other-feature"
 	namespace   = "default"
@@ -54,12 +53,7 @@ var (
 		NamespacedName: iftLookupKey,
 	}
 
-	otherLookupKey        = types.NamespacedName{Name: otherName, Namespace: namespace}
-	otherReconcileRequest = reconcile.Request{
-		NamespacedName: otherLookupKey,
-	}
-
-	iftgLookupKey = types.NamespacedName{Name: group, Namespace: namespace}
+	otherLookupKey = types.NamespacedName{Name: otherName, Namespace: namespace}
 )
 
 var _ = Describe("InstalledFeature controller basics", func() {
@@ -115,7 +109,6 @@ var _ = Describe("InstalledFeature controller basics", func() {
 			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
 
 			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
-			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
 			client.EXPECT().InfoEvent(ift, "Update", NoteChangedFeature, ift.GetNamespace(), ift.GetName())
 

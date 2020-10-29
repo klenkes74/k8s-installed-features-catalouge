@@ -25,62 +25,59 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (r *Reconciler) handleDependent(ctx context.Context, instance *featuresv1alpha1.InstalledFeature, reqLogger logr.Logger, changed bool) (bool, error) {
+func (r *Reconciler) handleDependent(
+	ctx context.Context,
+	instance *featuresv1alpha1.InstalledFeature,
+	reqLogger logr.Logger,
+	changed bool,
+) (bool, error) {
 	if instance.Status.DependingFeatures == nil || len(instance.Status.DependingFeatures) == 0 {
 		return changed, nil
 	}
 
 	reqLogger.Info("handling dependent features")
 
-	missingDependent := make([]featuresv1alpha1.InstalledFeatureRef, 0)
+	patch := r.Client.GetInstalledFeaturePatchBase(instance)
+
+	changedStatus := false
+	removedFeatures := []featuresv1alpha1.InstalledFeatureRef{}
 	for _, feature := range instance.Status.DependingFeatures {
-		ift, err := r.Client.LoadInstalledFeature(ctx, types.NamespacedName{Namespace: feature.Namespace, Name: feature.Name})
+		ift, err := r.Client.LoadInstalledFeature(ctx,
+			types.NamespacedName{Namespace: feature.Namespace, Name: feature.Name},
+		)
+
 		if err != nil {
 			if errors.IsNotFound(err) {
-				reqLogger.Info("dependent feature is not found - don't need to change it.", "feature", feature)
+				removedFeatures, _ = r.addRef(removedFeatures, feature)
+				changedStatus = true
 				continue
 			}
 
 			reqLogger.Info("dependent feature can not be loaded.", "dependent-feature", feature)
-			missingDependent = append(missingDependent, feature)
 
 			continue
 		}
 
-		if ift.DeletionTimestamp != nil {
-			continue
-		}
+		if instance.DeletionTimestamp != nil && ift.DeletionTimestamp != nil {
+			err = r.Client.ReconcileFeature(ctx, ift)
+			if err != nil {
+				reqLogger.Info("can not reconcile feature",
+					"feature", ift,
+				)
 
-		iftStatus := r.Client.GetInstalledFeaturePatchBase(ift)
-		if instance.DeletionTimestamp == nil {
-			for _, dep := range ift.Status.MissingDependencies {
-				if dep.Namespace == instance.Namespace && dep.Name == instance.Name {
-					r.removeMissingDependencyStatus(ift, featuresv1alpha1.InstalledFeatureRef{
-						Namespace: instance.Namespace,
-						Name:      instance.Name,
-					}, reqLogger)
-				}
+				return changed, fmt.Errorf("can not start reconcilation of depending feature: %s", err.Error())
 			}
-		} else {
-			r.markDependencyAsMissing(
-				ift,
-				featuresv1alpha1.InstalledFeatureRef{
-					Namespace: instance.Namespace,
-					Name:      instance.Name,
-				},
-				reqLogger,
-			)
 		}
-
-		err = r.Client.PatchInstalledFeatureStatus(ctx, ift, iftStatus)
-		if err != nil {
-			return changed, err
-		}
-
 	}
 
-	if len(missingDependent) > 0 {
-		return changed, fmt.Errorf("could not update dependent features: %v", missingDependent)
+	if changedStatus {
+		for _, feature := range removedFeatures {
+			instance.Status.DependingFeatures, _ = r.removeRef(instance.Status.DependingFeatures, feature)
+		}
+		err := r.Client.PatchInstalledFeatureStatus(ctx, instance, patch)
+		if err != nil {
+			return changed, fmt.Errorf("could not update dependent features: %s", err.Error())
+		}
 	}
 
 	return changed, nil

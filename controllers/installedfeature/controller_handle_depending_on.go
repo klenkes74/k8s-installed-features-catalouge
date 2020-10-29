@@ -31,9 +31,6 @@ func (r *Reconciler) handleDependingOn(ctx context.Context, instance *featuresv1
 
 	reqLogger.Info("handling dependencies")
 
-	status := r.Client.GetInstalledFeaturePatchBase(instance)
-
-	missingDependencies := make([]featuresv1alpha1.InstalledFeatureRef, 0)
 	for _, dependency := range instance.Spec.DependsOn {
 		locator := types.NamespacedName{
 			Namespace: dependency.Namespace,
@@ -43,66 +40,70 @@ func (r *Reconciler) handleDependingOn(ctx context.Context, instance *featuresv1
 		ift, err := r.Client.LoadInstalledFeature(ctx, locator)
 		if err != nil || ift.DeletionTimestamp != nil {
 			r.markDependencyAsMissing(instance, dependency, reqLogger)
-			missingDependencies = append(missingDependencies, dependency)
+
+			changed = true
 			continue // next dependency
 		}
 
-		reqLogger.Info("working on dependency", "dependency", dependency)
-
-		if ift.Status.DependingFeatures == nil && instance.DeletionTimestamp == nil {
-			ift.Status.DependingFeatures = make([]featuresv1alpha1.InstalledFeatureRef, 0)
-		}
-		iftStatus := r.Client.GetInstalledFeaturePatchBase(ift)
-
-		dependencyChanged := true
-		alreadyRegistered := false
-		for i, ft := range ift.Status.DependingFeatures {
-			if ft.Namespace == instance.Namespace && ft.Name == instance.Name {
-				alreadyRegistered = true
-
-				if instance.DeletionTimestamp != nil {
-					reqLogger.Info("instance is deleted - remove registered depending feature", "feature", ift.Name)
-
-					ift.Status.DependingFeatures[i] = ift.Status.DependingFeatures[len(ift.Status.DependingFeatures)-1]
-					// We do not need to put s[i] at the end, as it will be discarded anyway
-					ift.Status.DependingFeatures = ift.Status.DependingFeatures[:len(ift.Status.DependingFeatures)-1]
-				} else {
-					reqLogger.Info("feature already registered as depending feature", "feature", ift.Name)
-					dependencyChanged = false
-				}
-				break
-			}
-		}
-
-		if !alreadyRegistered && instance.DeletionTimestamp == nil {
-			ift.Status.DependingFeatures = append(ift.Status.DependingFeatures, featuresv1alpha1.InstalledFeatureRef{
-				Namespace: instance.Namespace,
-				Name:      instance.Name,
-			})
-		}
-
-		if dependencyChanged {
-			err = r.Client.PatchInstalledFeatureStatus(ctx, ift, iftStatus)
+		if instance.DeletionTimestamp == nil {
+			err = r.registerInstanceAsDependingOn(ctx, instance, ift, reqLogger)
 			if err != nil {
-				reqLogger.Info("can not update entry with dependency information", "feature", ift)
+				reqLogger.Info("can not change state of dependency: ", "error", err.Error())
 
 				return changed, err
 			}
 		}
+
+		err = r.Client.ReconcileFeature(ctx, ift)
+		if err != nil {
+			reqLogger.Info("can not reconcile feature",
+				"feature", ift,
+			)
+
+			return changed, fmt.Errorf("can not start reconcilation of dependency: %s", err.Error())
+		}
 	}
 
-	err := r.Client.PatchInstalledFeatureStatus(ctx, instance, status)
-	if err != nil {
-		reqLogger.Info("dependency status could not be set.")
-
-		return changed, err
+	if len(instance.Status.MissingDependencies) > 0 {
+		r.Client.WarnEvent(instance, eventReason, NoteMissingDependencies, instance.Status.MissingDependencies)
+		return changed, fmt.Errorf("missing dependencies: %v", instance.Status.MissingDependencies)
 	}
 
-	if len(missingDependencies) > 0 {
-		r.Client.WarnEvent(instance, eventReason, NoteMissingDependencies, missingDependencies)
-		return changed, fmt.Errorf("missing dependencies: %v", missingDependencies)
-	}
-
-	reqLogger.Info("added the dependency to status")
 	return changed, nil
+}
+
+func (r *Reconciler) markDependencyAsMissing(
+	instance *featuresv1alpha1.InstalledFeature,
+	dependency featuresv1alpha1.InstalledFeatureRef,
+	reqLogger logr.Logger,
+) bool {
+	result := false
+
+	reqLogger.Info("adding the missing feature to missing feature list", "feature", dependency)
+	instance.Status.MissingDependencies, result = r.addRef(instance.Status.MissingDependencies, dependency)
+
+	return result
+}
+
+func (r *Reconciler) registerInstanceAsDependingOn(
+	ctx context.Context,
+	instance, dependency *featuresv1alpha1.InstalledFeature,
+	reqLogger logr.Logger,
+) error {
+	if i := r.indexOfRef(dependency.Status.DependingFeatures, r.generateRef(instance)); i != -1 {
+		reqLogger.Info("dependency already listed in feature",
+			"feature", dependency,
+			"dependency", instance,
+		)
+		return nil
+	}
+
+	reqLogger.Info("adding dependency to feature",
+		"feature", dependency,
+		"dependency", instance,
+	)
+
+	patch := r.Client.GetInstalledFeaturePatchBase(dependency)
+	dependency.Status.DependingFeatures, _ = r.addRef(dependency.Status.DependingFeatures, r.generateRef(instance))
+	return r.Client.PatchInstalledFeatureStatus(ctx, dependency, patch)
 }

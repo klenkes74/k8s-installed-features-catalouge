@@ -33,11 +33,13 @@ type OcpClient interface {
 	// lookup The namespaced name for the resource to loead.
 	LoadInstalledFeature(ctx context.Context, lookup types.NamespacedName) (*v1alpha1.InstalledFeature, error)
 	SaveInstalledFeature(ctx context.Context, instance *v1alpha1.InstalledFeature) error
+	ReconcileFeature(ctx context.Context, instance *v1alpha1.InstalledFeature) error
 	GetInstalledFeaturePatchBase(instance *v1alpha1.InstalledFeature) client.Patch
 	PatchInstalledFeatureStatus(ctx context.Context, instance *v1alpha1.InstalledFeature, patch client.Patch) error
 
 	LoadInstalledFeatureGroup(ctx context.Context, lookup types.NamespacedName) (*v1alpha1.InstalledFeatureGroup, error)
 	SaveInstalledFeatureGroup(ctx context.Context, instance *v1alpha1.InstalledFeatureGroup) error
+	ReconcileFeatureGroup(ctx context.Context, instance *v1alpha1.InstalledFeatureGroup) error
 	GetInstalledFeatureGroupPatchBase(instance *v1alpha1.InstalledFeatureGroup) client.Patch
 	PatchInstalledFeatureGroupStatus(ctx context.Context, instance *v1alpha1.InstalledFeatureGroup, patch client.Patch) error
 
@@ -86,6 +88,10 @@ func (o OcpClientProd) SaveInstalledFeature(ctx context.Context, instance *v1alp
 	return o.Client.Update(ctx, instance)
 }
 
+func (o OcpClientProd) ReconcileFeature(ctx context.Context, instance *v1alpha1.InstalledFeature) error {
+	return o.Client.Update(ctx, instance)
+}
+
 func (o OcpClientProd) GetInstalledFeaturePatchBase(instance *v1alpha1.InstalledFeature) client.Patch {
 	return client.MergeFrom(instance.DeepCopy())
 }
@@ -106,6 +112,10 @@ func (o OcpClientProd) LoadInstalledFeatureGroup(ctx context.Context, lookup typ
 }
 
 func (o OcpClientProd) SaveInstalledFeatureGroup(ctx context.Context, instance *v1alpha1.InstalledFeatureGroup) error {
+	return o.Client.Update(ctx, instance)
+}
+
+func (o OcpClientProd) ReconcileFeatureGroup(ctx context.Context, instance *v1alpha1.InstalledFeatureGroup) error {
 	return o.Client.Update(ctx, instance)
 }
 

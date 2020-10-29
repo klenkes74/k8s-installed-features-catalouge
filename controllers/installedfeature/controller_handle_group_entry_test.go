@@ -17,138 +17,133 @@
 package installedfeature_test
 
 import (
-	"errors"
-	"github.com/golang/mock/gomock"
-	. "github.com/klenkes74/k8s-installed-features-catalogue/api/v1alpha1"
-	"github.com/klenkes74/k8s-installed-features-catalogue/controllers/installedfeature"
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
-	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	// +kubebuilder:scaffold:imports
 )
 
 var _ = Describe("InstalledFeature controller handling featuregroups", func() {
-	Context("Handle Library Groups", func() {
-		It("should add the status entry on the IFTG when the IFTG has no features yet", func() {
-			ift := createIFT(name, namespace, version, provider, description, uri, true, false)
-			setGroupToIFT(ift, group, namespace)
-			iftg := createIFTG(group, namespace, provider, description, uri, true, false)
+	/*
+		Context("Handle Library Groups", func() {
+			It("should add the status entry on the IFTG when the IFTG has no features yet", func() {
+				ift := createIFT(name, namespace, version, provider, description, uri, true, false)
+				setGroupToIFT(ift, group, namespace)
+				iftg := createIFTG(group, namespace, provider, description, uri, true, false)
 
-			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
+				client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
 
-			client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftgLookupKey).Return(iftg, nil)
-			client.EXPECT().GetInstalledFeatureGroupPatchBase(gomock.Any()).Return(k8sclient.MergeFrom(iftg))
-			client.EXPECT().PatchInstalledFeatureGroupStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftgLookupKey).Return(iftg, nil)
+				client.EXPECT().GetInstalledFeatureGroupPatchBase(gomock.Any()).Return(k8sclient.MergeFrom(iftg))
+				client.EXPECT().PatchInstalledFeatureGroupStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
-			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
-			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
+				client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
-			client.EXPECT().InfoEvent(ift, "Update", "Changed feature %s/%s", ift.GetNamespace(), ift.GetName())
+				client.EXPECT().InfoEvent(ift, "Update", "Changed feature %s/%s", ift.GetNamespace(), ift.GetName())
 
-			result, err := sut.Reconcile(iftReconcileRequest)
+				result, err := sut.Reconcile(iftReconcileRequest)
 
-			Expect(result).Should(Equal(successResult))
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("should add the status entry on the IFTG when the IFTG has already features", func() {
-			ift := createIFT(name, namespace, version, provider, description, uri, true, false)
-			setGroupToIFT(ift, group, namespace)
-			iftg := createIFTG(group, namespace, provider, description, uri, true, false)
-			iftg.Status.Features = make([]InstalledFeatureGroupListedFeature, 1)
-			iftg.Status.Features[0] = InstalledFeatureGroupListedFeature{
-				Namespace: namespace,
-				Name:      "other-feature",
-			}
-
-			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
-
-			client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftgLookupKey).Return(iftg, nil)
-			client.EXPECT().GetInstalledFeatureGroupPatchBase(gomock.Any()).Return(k8sclient.MergeFrom(iftg))
-			client.EXPECT().PatchInstalledFeatureGroupStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-
-			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
-			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-
-			client.EXPECT().InfoEvent(ift, "Update", installedfeature.NoteChangedFeature, ift.GetNamespace(), ift.GetName())
-
-			result, err := sut.Reconcile(iftReconcileRequest)
-
-			Expect(result).Should(Equal(successResult))
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("should not add the feature to the status entry on the IFTG when the IFTG already lists this feature", func() {
-			ift := createIFT(name, namespace, version, provider, description, uri, true, false)
-			setGroupToIFT(ift, group, namespace)
-			iftg := createIFTG(group, namespace, provider, description, uri, true, false)
-			iftg.Status.Features = make([]InstalledFeatureGroupListedFeature, 1)
-			iftg.Status.Features[0] = InstalledFeatureGroupListedFeature{
-				Namespace: namespace,
-				Name:      name,
-			}
-
-			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
-
-			client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftgLookupKey).Return(iftg, nil)
-			client.EXPECT().GetInstalledFeatureGroupPatchBase(gomock.Any()).Return(k8sclient.MergeFrom(iftg))
-
-			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
-			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-
-			client.EXPECT().InfoEvent(ift, "Update", installedfeature.NoteChangedFeature, ift.GetNamespace(), ift.GetName())
-
-			result, err := sut.Reconcile(iftReconcileRequest)
-
-			Expect(result).Should(Equal(successResult))
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("should remove the status entry on the IFTG when IFT is deleted and is listed in IFTG", func() {
-			ift := createIFT(name, namespace, version, provider, description, uri, false, true)
-			setGroupToIFT(ift, group, namespace)
-			iftg := createIFTG(group, namespace, provider, description, uri, true, false)
-			iftg.Status.Features = make([]InstalledFeatureGroupListedFeature, 1)
-			iftg.Status.Features[0] = InstalledFeatureGroupListedFeature{
-				Namespace: namespace,
-				Name:      name,
-			}
-
-			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
-
-			client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftgLookupKey).Return(iftg, nil)
-			client.EXPECT().GetInstalledFeatureGroupPatchBase(gomock.Any()).Return(k8sclient.MergeFrom(iftg))
-			client.EXPECT().PatchInstalledFeatureGroupStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-
-			client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
-			client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-
-			client.EXPECT().InfoEvent(ift, "Delete", installedfeature.NoteChangedFeature, ift.GetNamespace(), ift.GetName())
-
-			result, err := sut.Reconcile(iftReconcileRequest)
-
-			Expect(result).Should(Equal(successResult))
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("should requeue the request when IFTG can't be loaded", func() {
-			ift := createIFT(name, namespace, version, provider, description, uri, false, true)
-			setGroupToIFT(ift, group, namespace)
-
-			client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
-
-			client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftgLookupKey).Return(nil, errors.New("can not load IFTG"))
-
-			By("Sending events", func() {
-
-				client.EXPECT().WarnEvent(ift, "Delete", installedfeature.NoteUpdatingGroupFailed, types.NamespacedName{Namespace: ift.GetNamespace(), Name: ift.GetName()})
+				Expect(result).Should(Equal(successResult))
+				Expect(err).ToNot(HaveOccurred())
 			})
 
-			result, err := sut.Reconcile(iftReconcileRequest)
+			It("should add the status entry on the IFTG when the IFTG has already features", func() {
+				ift := createIFT(name, namespace, version, provider, description, uri, true, false)
+				setGroupToIFT(ift, group, namespace)
+				iftg := createIFTG(group, namespace, provider, description, uri, true, false)
+				iftg.Status.Features = make([]InstalledFeatureGroupListedFeature, 1)
+				iftg.Status.Features[0] = InstalledFeatureGroupListedFeature{
+					Namespace: namespace,
+					Name:      "other-feature",
+				}
 
-			Expect(result).Should(Equal(errorResult))
-			Expect(err).Should(HaveOccurred())
+				client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+				client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftgLookupKey).Return(iftg, nil)
+				client.EXPECT().GetInstalledFeatureGroupPatchBase(gomock.Any()).Return(k8sclient.MergeFrom(iftg))
+				client.EXPECT().PatchInstalledFeatureGroupStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+				client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
+				client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+				client.EXPECT().InfoEvent(ift, "Update", installedfeature.NoteChangedFeature, ift.GetNamespace(), ift.GetName())
+
+				result, err := sut.Reconcile(iftReconcileRequest)
+
+				Expect(result).Should(Equal(successResult))
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("should not add the feature to the status entry on the IFTG when the IFTG already lists this feature", func() {
+				ift := createIFT(name, namespace, version, provider, description, uri, true, false)
+				setGroupToIFT(ift, group, namespace)
+				iftg := createIFTG(group, namespace, provider, description, uri, true, false)
+				iftg.Status.Features = make([]InstalledFeatureGroupListedFeature, 1)
+				iftg.Status.Features[0] = InstalledFeatureGroupListedFeature{
+					Namespace: namespace,
+					Name:      name,
+				}
+
+				client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+				client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftgLookupKey).Return(iftg, nil)
+				client.EXPECT().GetInstalledFeatureGroupPatchBase(gomock.Any()).Return(k8sclient.MergeFrom(iftg))
+
+				client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
+				client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+				client.EXPECT().InfoEvent(ift, "Update", installedfeature.NoteChangedFeature, ift.GetNamespace(), ift.GetName())
+
+				result, err := sut.Reconcile(iftReconcileRequest)
+
+				Expect(result).Should(Equal(successResult))
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("should remove the status entry on the IFTG when IFT is deleted and is listed in IFTG", func() {
+				ift := createIFT(name, namespace, version, provider, description, uri, false, true)
+				setGroupToIFT(ift, group, namespace)
+				iftg := createIFTG(group, namespace, provider, description, uri, true, false)
+				iftg.Status.Features = make([]InstalledFeatureGroupListedFeature, 1)
+				iftg.Status.Features[0] = InstalledFeatureGroupListedFeature{
+					Namespace: namespace,
+					Name:      name,
+				}
+
+				client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+				client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftgLookupKey).Return(iftg, nil)
+				client.EXPECT().GetInstalledFeatureGroupPatchBase(gomock.Any()).Return(k8sclient.MergeFrom(iftg))
+				client.EXPECT().PatchInstalledFeatureGroupStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+				client.EXPECT().GetInstalledFeaturePatchBase(gomock.Any()).Return(k8sclient.MergeFrom(ift))
+				client.EXPECT().PatchInstalledFeatureStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+
+				client.EXPECT().InfoEvent(ift, "Delete", installedfeature.NoteChangedFeature, ift.GetNamespace(), ift.GetName())
+
+				result, err := sut.Reconcile(iftReconcileRequest)
+
+				Expect(result).Should(Equal(successResult))
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("should requeue the request when IFTG can't be loaded", func() {
+				ift := createIFT(name, namespace, version, provider, description, uri, false, true)
+				setGroupToIFT(ift, group, namespace)
+
+				client.EXPECT().LoadInstalledFeature(gomock.Any(), iftLookupKey).Return(ift, nil)
+
+				client.EXPECT().LoadInstalledFeatureGroup(gomock.Any(), iftgLookupKey).Return(nil, errors.New("can not load IFTG"))
+
+				By("Sending events", func() {
+
+					client.EXPECT().WarnEvent(ift, "Delete", installedfeature.NoteUpdatingGroupFailed, types.NamespacedName{Namespace: ift.GetNamespace(), Name: ift.GetName()})
+				})
+
+				result, err := sut.Reconcile(iftReconcileRequest)
+
+				Expect(result).Should(Equal(errorResult))
+				Expect(err).Should(HaveOccurred())
+			})
 		})
-	})
+	*/
 })
